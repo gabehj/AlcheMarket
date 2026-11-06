@@ -9,6 +9,10 @@ public class Potion {
         this.recipes = recipes;
     }
 
+    public void addRecipe(ArrayList<String> recipe) {
+        recipes.add(recipe);
+    }
+
     public String getName() {
         return name;
     }

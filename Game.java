@@ -20,8 +20,8 @@ public class Game {
             "Mandrake Root", 
             "Unicorn Hair", 
             "Dragon Scale", 
-            "Phoenix Feather", 
-            "Wolfsbane")
+            "Phoenix Feather"
+            )
         );
         potionNames = new ArrayList<String>(List.of(
             "Healing",
@@ -29,8 +29,8 @@ public class Game {
             "Strength", 
             "Speed", 
             "Luck",
-            "Poison: Mamba Venom",
-            "Poison: Troll Dung")
+            "Poison: Infinite Scoville",
+            "Poison: Gamma Explosion")
         );
         
         generateRecipeCombos(0, new ArrayList<String>());
@@ -41,10 +41,11 @@ public class Game {
         if (combo.size() == num_ingredients) combos.add(combo);
         
         else {
-            for (int i=last_index; i < ingredientNames.size() - num_ingredients - combo.size() + 1; i++) {
+            for (int i=last_index; i < ingredientNames.size() - num_ingredients + combo.size() + 1; i++) {
                 ArrayList<String> newCombo = new ArrayList<>(combo);
                 newCombo.add(ingredientNames.get(i));
-                generateRecipeCombos(i, newCombo);
+                //System.out.println("Combo: "+newCombo + " | Last index: "+i);
+                generateRecipeCombos(i+1, newCombo);
             }
         }
     }
@@ -55,5 +56,9 @@ public class Game {
 
     public ArrayList<ArrayList<String>> getCombos() {
         return combos;
+    }
+
+    public ArrayList<String> getIngredientNames() {
+        return ingredientNames;
     }
 }

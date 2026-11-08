@@ -1,18 +1,20 @@
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.List;
-
+import java.util.Collections; // ArrayList.sort()
 public class Game {
     
     double recipe_coverage = 0.75; // Fraction of recipes that don't result in duds
 
     private int num_ingredients = 3;  // Number of ingredients for every recipe
         
-    private ArrayList<ArrayList<String>> combos = new ArrayList<>(); // Stores all possible recipes
-
     private ArrayList<String> ingredientNames; // All ingredients
     private ArrayList<String> potionNames; // All potion names
     private ArrayList<String> poisonNames; // All poison names
+
+    private ArrayList<ArrayList<String>> combos = new ArrayList<>(); // Stores all possible recipes
+
+    private ArrayList<Potion> potions = new ArrayList<>(); // Stores all potions
 
 
     public Game() {
@@ -24,53 +26,10 @@ public class Game {
             "Dragon Scale", 
             "Phoenix Feather",
             "Nightshade",
-            "Wolfsbane",
-            "Ginseng Root",
-            "Mamba Venom",
-            "Fairy Dust",
-            "Troll Dung",
-            "Bear Claw",
-            "Eye of Beholder",
-            "Basilisk Fang",
-            "Four-Leaf Clover",
-            "Mummy Guts",
-            "Silver Bullet",
-            "Pickaxe Powder",
-            "Bantha Fodder",
-            "Everclear",
-            "Unpaid Potion Intern",
-            "Half-Eaten Sandwich",
-            "Fermented Ox Brain",
-            "Can-Do Attitude",
-            "Elbow Grease",
-            "Unwashed Goblin Loincloth",
-            "Ancient Oak Knot",
-            "Vial of Souls",
-            "Wing of Bat",
-            "Fur of Werewolf",
-            "Vampire Artery",
-            "Demon Horn",
-            "Destroyer Angel Shroom",
-            "Deathcap Shroom",
-            "Human Heart (chopped in two)",
-            "Antler of Chimera",
-            "Pickled Spider Brain",
-            "Ichor of a Fallen God",
-            "Dust of the Elder Scroll",
-            "Urn of Pyroclastic Ash",
-            "Secret written in the blood of a thousand virgins",
-            "Unicorn Extract",
-            "Fallen soldier torn from the beak of a buzzard",
-            "Splinter from the mast of a sunken pirate ship",
-            "String of an elven bow",
-            "Guarded trinket of an alchemist's homunculus",
-            "Box with a child's last words echoing inside",
-            "First drop of rain to fall on a barren desert",
-            "Wand core of a formidible battle mage",
-            "Shard of a narcisist's mirror",
-            "Root of a lightning-struck tree"
+            "Wolfsbane"
         ));
         // ADD POTION NAMES HERE
+        
         potionNames = new ArrayList<String>(List.of(
             "Healing",
             "Invisibility", 
@@ -91,9 +50,37 @@ public class Game {
             "Poison: Heart-Shrinker",
             "Poison: Neverclear Alcohol"
         ));
+        
+        // O(NlogN) // Sort ingredients alphabetically to make recipes unordered
+        Collections.sort(ingredientNames); 
+        // Populate combination table with recipes
+        generateRecipeCombos(0, new ArrayList<String>()); 
+        System.out.println("Possible Potion Recipes: " + combos.size());
 
-        generateRecipeCombos(0, new ArrayList<String>()); // Populate combination table with recipes
-        System.out.println("Done!");
+        // Shuffle potion recipes
+        int random_index;
+        ArrayList<String> temp;
+        for (int i = 0; i < combos.size(); i++) {
+            random_index = (int) (Math.random() * ingredientNames.size());
+            temp = combos.get(i);
+            combos.set(i, combos.get(random_index));
+            combos.set(random_index, temp);
+        }
+
+        // Add potions to potion list
+        for (String potionName: potionNames) {
+            potions.add(new Potion(potionName));
+        }
+        for (String poisonName: poisonNames) {
+            potions.add(new Potion(poisonName, true));
+        }
+
+        for (int i = 0; i < (int)(recipe_coverage * combos.size()) ; i++) {
+            potions.get(i % potions.size()).addRecipe(combos.get(i));
+        }
+
+
+
     }
 
     // 
@@ -122,6 +109,14 @@ public class Game {
     // GETTERS
     public int getNumIngredients() {
         return num_ingredients;
+    }
+
+    public double getRecipeCoverage() {
+        return recipe_coverage;
+    }
+
+    public ArrayList<Potion> getPotions() {
+        return potions;
     }
 
     public ArrayList<ArrayList<String>> getCombos() {

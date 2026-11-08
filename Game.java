@@ -38,8 +38,8 @@ public class Game {
     }
 
     // 
-    // Space: O((N! / M!) ** 2) , where N is the length of ingredentNames and M is the length of the Recipe
-    // Time:  O((N! / M!) * M)  , where N is the length of ingredentNames and M is the length of the Recipe
+    // Space: O((N! / (M! * (N - M)!)) ** 2) = O((NcM)**2), where N is the length of ingredentNames and M is the length of each Recipe
+    // Time:  O((N! / (M! * (N - M)!)) * M)  = O(M(NcM))  , where N is the length of ingredentNames and M is the length of each Recipe
     public void generateRecipeCombos(int last_index, ArrayList<String> combo) {
         
         // Base Case: Add recipe to combos when it is complete

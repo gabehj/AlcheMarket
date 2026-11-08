@@ -12,29 +12,88 @@ public class Game {
 
     private ArrayList<String> ingredientNames; // All ingredients
     private ArrayList<String> potionNames; // All potion names
+    private ArrayList<String> poisonNames; // All poison names
 
 
     public Game() {
+        System.out.print("Opening AlcheMarket... ");
         // ADD INGREDIENT NAMES HERE
         ingredientNames = new ArrayList<String>(List.of(
             "Mandrake Root", 
             "Unicorn Hair", 
             "Dragon Scale", 
-            "Phoenix Feather"
-            )
-        );
+            "Phoenix Feather",
+            "Nightshade",
+            "Wolfsbane",
+            "Ginseng Root",
+            "Mamba Venom",
+            "Fairy Dust",
+            "Troll Dung",
+            "Bear Claw",
+            "Eye of Beholder",
+            "Basilisk Fang",
+            "Four-Leaf Clover",
+            "Mummy Guts",
+            "Silver Bullet",
+            "Pickaxe Powder",
+            "Bantha Fodder",
+            "Everclear",
+            "Unpaid Potion Intern",
+            "Half-Eaten Sandwich",
+            "Fermented Ox Brain",
+            "Can-Do Attitude",
+            "Elbow Grease",
+            "Unwashed Goblin Loincloth",
+            "Ancient Oak Knot",
+            "Vial of Souls",
+            "Wing of Bat",
+            "Fur of Werewolf",
+            "Vampire Artery",
+            "Demon Horn",
+            "Destroyer Angel Shroom",
+            "Deathcap Shroom",
+            "Human Heart (chopped in two)",
+            "Antler of Chimera",
+            "Pickled Spider Brain",
+            "Ichor of a Fallen God",
+            "Dust of the Elder Scroll",
+            "Urn of Pyroclastic Ash",
+            "Secret written in the blood of a thousand virgins",
+            "Unicorn Extract",
+            "Fallen soldier torn from the beak of a buzzard",
+            "Splinter from the mast of a sunken pirate ship",
+            "String of an elven bow",
+            "Guarded trinket of an alchemist's homunculus",
+            "Box with a child's last words echoing inside",
+            "First drop of rain to fall on a barren desert",
+            "Wand core of a formidible battle mage",
+            "Shard of a narcisist's mirror",
+            "Root of a lightning-struck tree"
+        ));
         // ADD POTION NAMES HERE
         potionNames = new ArrayList<String>(List.of(
             "Healing",
             "Invisibility", 
-            "Strength", 
-            "Speed", 
-            "Luck",
-            "Poison: Infinite Scoville",
-            "Poison: Gamma Explosion")
-        );
-        
+            "Adrenaline", 
+            "Speed of a Tardy Kobold", 
+            "Luck of a Leprechaun",
+            "Dangerously High Charisma",
+            "City-Melting Dragon Breath",
+            "Michelin Star Ambrosia",
+            "New Perspectives"
+        ));
+        // ADD POISON NAMES HERE
+        poisonNames = new ArrayList<String>(List.of(
+            "Poison: Hellfire Scoville",
+            "Poison: Gamma Explosion",
+            "Poison: Distilled Dysentery",
+            "Poison: Throat-Melter",
+            "Poison: Heart-Shrinker",
+            "Poison: Neverclear Alcohol"
+        ));
+
         generateRecipeCombos(0, new ArrayList<String>()); // Populate combination table with recipes
+        System.out.println("Done!");
     }
 
     // 

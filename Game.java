@@ -75,6 +75,7 @@ public class Game {
             potions.add(new Potion(poisonName, true));
         }
 
+        // Add recipes to potions
         for (int i = 0; i < (int)(recipe_coverage * combos.size()) ; i++) {
             potions.get(i % potions.size()).addRecipe(combos.get(i));
         }
@@ -84,7 +85,7 @@ public class Game {
     }
 
     // 
-    // Space: O((N! / (M! * (N - M)!)) ** 2) = O((NcM)**2), where N is the length of ingredentNames and M is the length of each Recipe
+    // Space: O((N! / (M! * (N - M)!)) * M)  = O(M(NcM)), where N is the length of ingredentNames and M is the length of each Recipe
     // Time:  O((N! / (M! * (N - M)!)) * M)  = O(M(NcM))  , where N is the length of ingredentNames and M is the length of each Recipe
     public void generateRecipeCombos(int last_index, ArrayList<String> combo) {
         

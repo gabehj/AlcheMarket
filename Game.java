@@ -16,6 +16,15 @@ public class Game {
 
     private ArrayList<Potion> potions = new ArrayList<>(); // Stores all potions
 
+    private Queue<Customer> customers = new Queue<>();
+
+    private int reputation = 50;
+
+    private Validation input = new Validation();
+
+    private int startingIngredients = 4;
+    private ArrayList<String> playerIngredients = new ArrayList<>();
+
 
     public Game() {
 
@@ -23,8 +32,66 @@ public class Game {
 
         brewDataStructures();
 
-        
+        customers.add(new Customer());
+        customers.add(new Customer());
+        customers.add(new Customer());
 
+        // 
+        for (int i = 0; i < startingIngredients; i++) {
+            playerIngredients.add(ingredientNames.remove((int) (Math.random() * ingredientNames.size())));
+        }
+
+        while (!customers.isEmpty()) {
+            Customer current = customers.remove();
+            System.out.println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~");
+            System.out.println(current.getIntroMessage());
+
+            ArrayList<String> brew = input.brewPotion(playerIngredients, num_ingredients);
+
+            boolean isDud = true;
+            Potion playerPotion;
+            for (Potion potion : potions) {
+                for (ArrayList<String> recipe : potion.getRecipes()) {
+                    if (brew.equals(recipe)) {
+                        isDud = false;
+                        playerPotion = potion;
+                        break;
+                    }
+                }
+            }
+
+            if (isDud) {
+                System.out.println(current.getDudMessage());
+                reputation -= 3;
+            }
+            else if (playerPotion.isPoison()) {
+                reputation -= 50;
+                System.out.println("The customer curls over and dies from your "+playerPotion.getName());
+            }
+            else {
+                boolean isCorrect = current.drinkPotion(playerPotion);
+
+                if (isCorrect) {
+                    current.getCorrectMessage()
+                    reputation += 15;
+                    String newIngredient = ingredientNames.remove((int) (Math.random() * ingredientNames.size()));
+                    playerIngredients.add(newIngredient);
+                    System.out.println("You received the new ingredient: "+newIngredient+"!");
+                    System.out.println("You now have "+playerIngredients.size()+" in your collection.");
+                }
+                else {
+                    current.getIncorrectMessage(playerPotion);
+                    reputation -= 10;
+                }
+            }
+
+            if (reputation <= 0) {
+                System.out.println("The villagers break into your laboratory, drag you into the town square, and burn you at the stake");
+                System.out.println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ GAME OVER ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~");
+                break;
+            }
+        }
+        System.out.print("Congratulations! You have satisfied all of the customers and become a master alchemist!");
     }
 
     // Run all methods necessary to populate potions and ingredient data structures

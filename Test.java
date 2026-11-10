@@ -24,6 +24,6 @@ public class Test {
     }
 
     public static void testGeneratePotions() {
-        System.out.println("Potions: \n" + game.getPotions());
+        System.out.println("Potions: \n" + game.getPotions().get(game.getPotions().size() - 1));
     }
 }

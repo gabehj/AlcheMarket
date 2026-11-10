@@ -56,16 +56,15 @@ public class Game {
         // Populate combination table with recipes
         generateRecipeCombos(0, new ArrayList<String>()); 
         System.out.println("Possible Potion Recipes: " + combos.size());
+        
 
-        // Shuffle potion recipes
-        int random_index;
-        ArrayList<String> temp;
-        for (int i = 0; i < combos.size(); i++) {
-            random_index = (int) (Math.random() * ingredientNames.size());
-            temp = combos.get(i);
-            combos.set(i, combos.get(random_index));
-            combos.set(random_index, temp);
-        }
+
+
+
+    }
+
+    public void generatePotions() {
+
 
         // Add potions to potion list
         for (String potionName: potionNames) {
@@ -79,14 +78,24 @@ public class Game {
         for (int i = 0; i < (int)(recipe_coverage * combos.size()) ; i++) {
             potions.get(i % potions.size()).addRecipe(combos.get(i));
         }
+    }
 
-
-
+    // Space: O(1)
+    // Time:  O(N), where N is the length of combos
+    public void scrambleCombos(ArrayList<ArrayList<String>> combos) {
+        int random_index;
+        ArrayList<String> temp;
+        for (int i = 0; i < combos.size(); i++) {
+            random_index = (int) (Math.random() * ingredientNames.size());
+            temp = combos.get(i);
+            combos.set(i, combos.get(random_index));
+            combos.set(random_index, temp);
+        }
     }
 
     // 
-    // Space: O((N! / (M! * (N - M)!)) * M)  = O(M(NcM)), where N is the length of ingredentNames and M is the length of each Recipe
-    // Time:  O((N! / (M! * (N - M)!)) * M)  = O(M(NcM))  , where N is the length of ingredentNames and M is the length of each Recipe
+    // Space: O((N! / (M! * (N - M)!)) * M)  = O(M(C(N,M))), where N is the length of ingredentNames and M is the length of each Recipe
+    // Time:  O((N! / (M! * (N - M)!)) * M)  = O(M(C(N,M))), where N is the length of ingredentNames and M is the length of each Recipe
     public void generateRecipeCombos(int last_index, ArrayList<String> combo) {
         
         // Base Case: Add recipe to combos when it is complete

@@ -54,6 +54,10 @@ public class Potion {
         return m + "\n";
     }
 
+    public boolean equals(Potion other) {
+        return (getName().equals(other.getName()));
+    }
+
     // GETTERS
 
     public boolean isPoison() {

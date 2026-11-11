@@ -4,5 +4,9 @@ public class Main {
 
     // Prompt for player name
 
-    // Run
+    // Instantiate game(player)
+
+    // Start game
+
+    // Ask if they want to play again or see their high score
 }

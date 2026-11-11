@@ -5,6 +5,7 @@ public class Player {
     private int reputation = 0;
     private HashMap<String, ArrayList<ArrayList<String>>> savedRecipes = new HashMap<>();
 
+    // CONSTRUCTOR
     Player(String name) {
         this.name = name;
         this.reputation = 0;
@@ -27,6 +28,10 @@ public class Player {
     }
 
     // GETTERS
+
+    public HashMap<String, ArrayList<ArrayList<String>>> getSavedRecipes() {
+        return savedRecipes;
+    }
 
     public String getName() {
         return name;

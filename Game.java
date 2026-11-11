@@ -16,39 +16,57 @@ public class Game {
 
     private ArrayList<Potion> potions = new ArrayList<>(); // Stores all potions
 
-    private Queue<Customer> customers = new Queue<>();
+    private Queue<Customer> customers = new Queue<>(); // Customers in line
 
-    private int reputation = 50;
+    private int reputation = 50; // Score of player, Game Over when zero
 
     private Validation input = new Validation();
 
-    private int startingIngredients = 4;
-    private ArrayList<String> playerIngredients = new ArrayList<>();
+    private int startingIngredients = 4; // Ingredients player first has to make potions
+    private ArrayList<String> playerIngredients = new ArrayList<>(); // Players ingredients
 
+    private Player player; // Player object
 
+    // CONSTRUCTORS
     public Game() {
+        new Game("Paracelsus");
+    }
 
+    public Game(String name) {
+
+        // Instantiate New Player
+        player = new Player(name);
 
         System.out.print("Opening AlcheMarket... ");
 
+        // Setup Variables
         brewDataStructures();
 
+        // Enqueue Customers
         customers.add(new Customer());
         customers.add(new Customer());
         customers.add(new Customer());
 
-        // 
+        // Give player starting ingredients
         for (int i = 0; i < startingIngredients; i++) {
             playerIngredients.add(ingredientNames.remove((int) (Math.random() * ingredientNames.size())));
         }
 
+        // GAME LOOP
         while (!customers.isEmpty()) {
+            // Next customer is dequeued
             Customer current = customers.remove();
             System.out.println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~");
+            // Customer greets player and asks for a specific potion
             System.out.println(current.getIntroMessage());
 
+            // Player enters different ingredients equal to num_ingredients to make their potion
             ArrayList<String> brew = input.brewPotion(playerIngredients, num_ingredients);
+            // Sort ingredients so it matches potion recipes
+            Collections.sort(brew);
 
+            // Traverse all recipes in all potions until match is found
+            // If ingredients make a potion, store recipe for player
             boolean isDud = true;
             Potion playerPotion;
             for (Potion potion : potions) {
@@ -62,38 +80,55 @@ public class Game {
                 }
             }
 
+            // If ingredients do not match a potion recipe, then player fails and moves on to next customer
             if (isDud) {
+                // Customer returns a generic message of disappointment in player for not making potion
                 System.out.println(current.getDudMessage());
                 reputation -= 3;
             }
+            // If player made poison, they lose a ton of reputation
             else if (playerPotion.isPoison()) {
                 reputation -= 50;
                 System.out.println("The customer curls over and dies from your "+playerPotion.getName());
             }
+            // If player makes a potion (right or wrong), then the customer tries it and returns appropriate message
             else {
+                // Customer checks player potion name against their desired potion
                 boolean isCorrect = current.drinkPotion(playerPotion);
 
+                // Player success
                 if (isCorrect) {
+                    // Customer returns message saying how happy they are
                     current.getCorrectMessage()
                     reputation += 15;
+                    // Player randomly gets new ingredient
                     String newIngredient = ingredientNames.remove((int) (Math.random() * ingredientNames.size()));
                     playerIngredients.add(newIngredient);
                     System.out.println("You received the new ingredient: "+newIngredient+"!");
                     System.out.println("You now have "+playerIngredients.size()+" in your collection.");
                 }
                 else {
+                    // Customer returns message saying that they didn't want that particular potion. 
+                    // Must reference players potion by name
                     current.getIncorrectMessage(playerPotion);
                     reputation -= 10;
                 }
             }
 
+            // Player kills too many people and game ends
             if (reputation <= 0) {
                 System.out.println("The villagers break into your laboratory, drag you into the town square, and burn you at the stake");
                 System.out.println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ GAME OVER ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~");
                 break;
             }
         }
-        System.out.print("Congratulations! You have satisfied all of the customers and become a master alchemist!");
+        // Message if player satisfies all customers
+        if (reputation > 0) {
+            System.out.println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ QUEST COMPLETE! ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~");
+            System.out.println("Congratulations! You have satisfied all of the customers and become a master alchemist!");
+        }
+        // Score outputted
+        System.out.println(gameScore());
     }
 
     // Run all methods necessary to populate potions and ingredient data structures
@@ -249,6 +284,16 @@ public class Game {
         }
     }
 
+    public String gameScore() {
+        String message = "";
+        message += "~ ~ ~ SCORE ~ ~ ~";
+        message += "\n Reputation: "+reputation;
+        message += "\n Recipes: "+player.getSavedRecipes().values().size();
+        int score = reputation + player.getSavedRecipes().values().size();
+        message += "\n +++++++++++++++ ";
+        message += "\n Score: Reputation + Recipes = "+score;
+        return message + "\n";
+    }
 
     // GETTERS
     public int getNumIngredients() {

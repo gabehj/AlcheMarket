@@ -3,7 +3,7 @@ import java.util.Queue;
 import java.util.List;
 import java.util.Collections; // ArrayList.sort()
 public class Game {
-    
+
     double recipe_coverage = 0.75; // Fraction of recipes that don't result in duds
 
     private int num_ingredients = 3;  // Number of ingredients for every recipe
@@ -27,6 +27,8 @@ public class Game {
 
 
     public Game() {
+
+        Player player = new Player("Paracelsus");
 
         System.out.print("Opening AlcheMarket... ");
 
@@ -55,6 +57,7 @@ public class Game {
                     if (brew.equals(recipe)) {
                         isDud = false;
                         playerPotion = potion;
+                        player.saveRecipe(potion.getName(), recipe);
                         break;
                     }
                 }

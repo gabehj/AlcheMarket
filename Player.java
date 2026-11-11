@@ -10,6 +10,12 @@ public class Player {
         this.reputation = 0;
     }
 
+    // Resets recipe knowledge of player at start of new game
+    public  void forgetRecipes() {
+        savedRecipes = new HashMap<>();
+    }
+
+    // Adds recipe to player's history
     public void saveRecipe(String potionName, ArrayList<String> recipe) {
         // Get old recipes for given potion
         ArrayList<ArrayList<String>> oldRecipes = savedRecipes.get(potionName);

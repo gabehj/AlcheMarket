@@ -28,7 +28,6 @@ public class Game {
 
     public Game() {
 
-        Player player = new Player("Paracelsus");
 
         System.out.print("Opening AlcheMarket... ");
 
@@ -105,7 +104,7 @@ public class Game {
 
         // O(NlogN) // Sort ingredients alphabetically to make recipes unordered
         Collections.sort(ingredientNames); 
-        
+
         // Populate combination table with recipes
         generateRecipeCombos(0, new ArrayList<String>()); 
         System.out.println("Possible Potion Recipes: " + combos.size());

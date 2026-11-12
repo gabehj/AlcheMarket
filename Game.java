@@ -11,6 +11,24 @@ public class Game {
         CORRECT, WRONG_POTION, DUD, POISON
     }
 
+    public static final class ServiceResult {
+        private final Outcome outcome;
+        private final String brewedPotion;
+
+        private ServiceResult(Outcome outcome, String brewedPotion) {
+            this.outcome = outcome;
+            this.brewedPotion = brewedPotion;
+        }
+
+        public Outcome getOutcome() {
+            return outcome;
+        }
+
+        public String getBrewedPotion() {
+            return brewedPotion;
+        }
+    }
+
     private static final int RECIPE_SIZE = 3;
     private static final int STARTING_INGREDIENTS = 4;
     private static final double RECIPE_COVERAGE = 0.75;
@@ -59,12 +77,15 @@ public class Game {
 
         Potion starter = recipes.get(starterRecipe);
         player.saveRecipe(starter.getName(), new ArrayList<>(starterRecipe));
-        customers.enqueue(new Customer("Villager", starter.getName(), starterRecipe));
-        customers.enqueue(createCustomer("Traveler", random));
-        customers.enqueue(createCustomer("Merchant", random));
+        customers.enqueue(new NormalCustomer("Villager", CustomerType.TOWNSPERSON,
+            starter.getName(), starterRecipe));
+        Random typeRandom = new Random(~seed);
+        CustomerType[] types = CustomerType.values();
+        customers.enqueue(createCustomer("Traveler", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Merchant", types[typeRandom.nextInt(types.length)], random));
     }
 
-    private Customer createCustomer(String name, Random random) {
+    private Customer createCustomer(String name, CustomerType type, Random random) {
         List<List<String>> accessibleRecipes = new ArrayList<>();
         for (int first = 0; first < availableIngredients.size() - 2; first++) {
             for (int second = first + 1; second < availableIngredients.size() - 1; second++) {
@@ -81,10 +102,15 @@ public class Game {
             }
         }
         List<String> recipe = accessibleRecipes.get(random.nextInt(accessibleRecipes.size()));
-        return new Customer(name, recipes.get(recipe).getName(), recipe.subList(0, RECIPE_SIZE - 1));
+        return new NormalCustomer(name, type, recipes.get(recipe).getName(),
+            recipe.subList(0, RECIPE_SIZE - 1));
     }
 
     public Outcome serve(List<String> ingredients) {
+        return serveWithDetails(ingredients).getOutcome();
+    }
+
+    public ServiceResult serveWithDetails(List<String> ingredients) {
         if (customers.isEmpty()) {
             throw new NoSuchElementException("No customers are waiting.");
         }
@@ -96,20 +122,20 @@ public class Game {
         Customer customer = customers.dequeue();
         if (potion == null) {
             player.decreaseReputation(3);
-            return Outcome.DUD;
+            return new ServiceResult(Outcome.DUD, null);
         }
         player.saveRecipe(potion.getName(), new ArrayList<>(recipe));
         if (potion.isPoison()) {
             player.decreaseReputation(50);
-            return Outcome.POISON;
+            return new ServiceResult(Outcome.POISON, potion.getName());
         }
         if (!customer.getDesiredPotion().equals(potion.getName())) {
             player.decreaseReputation(10);
-            return Outcome.WRONG_POTION;
+            return new ServiceResult(Outcome.WRONG_POTION, potion.getName());
         }
         player.increaseReputation(15);
         unlockIngredient();
-        return Outcome.CORRECT;
+        return new ServiceResult(Outcome.CORRECT, potion.getName());
     }
 
     private List<String> validateRecipe(List<String> ingredients) {

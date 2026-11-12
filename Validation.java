@@ -6,6 +6,7 @@ import java.util.NoSuchElementException;
 public class Validation {
     private final Game game;
     private final ConsoleView view;
+    private final List<String> selected = new ArrayList<>();
 
     public Validation(Game game, ConsoleView view) {
         this.game = game;
@@ -14,8 +15,9 @@ public class Validation {
 
     public void run() {
         showTurn();
+        view.prompt();
         while (processLine(view.readLine())) {
-            // Commands decide whether play continues.
+            view.prompt();
         }
     }
 
@@ -23,20 +25,43 @@ public class Validation {
         if (line == null || line.strip().equalsIgnoreCase("quit")) {
             return false;
         }
-        String[] command = line.strip().split("\\s+", 2);
-        if (command[0].equalsIgnoreCase("recipes") && command.length == 1) {
-            game.getDiscoveredRecipes().forEach((potion, recipes) ->
-                view.showMessage(potion + ": " + recipes));
-            return true;
-        }
-        if (!command[0].equalsIgnoreCase("brew")) {
-            view.showMessage("Invalid command. Enter brew, recipes, or quit.");
-            return true;
+        String input = line.strip();
+        String[] command = input.split("\\s+", 2);
+        switch (input.toLowerCase(Locale.ROOT)) {
+            case "recipes":
+                view.showRecipeBook(game.getDiscoveredRecipes());
+                return true;
+            case "reset":
+                selected.clear();
+                redraw("Cauldron cleared.");
+                return true;
+            case "undo":
+                if (selected.isEmpty()) {
+                    view.showMessage("The cauldron is already empty.");
+                }
+                else {
+                    selected.remove(selected.size() - 1);
+                    redraw("Last ingredient removed.");
+                }
+                return true;
+            default:
+                break;
         }
         try {
-            List<String> recipe = parseRecipe(command.length == 2 ? command[1] : "");
-            Game.Outcome outcome = game.serve(recipe);
-            view.showOutcome(outcome, game.getReputation());
+            Customer customer = game.currentCustomer();
+            if (!command[0].equalsIgnoreCase("brew")) {
+                selectIngredient(input);
+                return true;
+            }
+            List<String> recipe = command.length == 2 ? parseRecipe(command[1]) : selected;
+            if (recipe.size() != game.getNumIngredients()) {
+                throw new IllegalArgumentException("Select " + game.getNumIngredients()
+                    + " ingredients before brewing.");
+            }
+            Game.ServiceResult result = game.serveWithDetails(recipe);
+            selected.clear();
+            view.refresh();
+            view.showOutcome(customer, result, game.getReputation());
         }
         catch (IllegalArgumentException error) {
             view.showMessage("Invalid selection. " + error.getMessage());
@@ -58,41 +83,60 @@ public class Validation {
         return true;
     }
 
+    private void selectIngredient(String input) {
+        String ingredient = resolveIngredient(input);
+        if (selected.contains(ingredient)) {
+            throw new IllegalArgumentException("That ingredient is already in the cauldron.");
+        }
+        if (selected.size() == game.getNumIngredients()) {
+            throw new IllegalArgumentException("Cauldron is full. Use brew, undo, or reset.");
+        }
+        selected.add(ingredient);
+        redraw("Added " + ingredient + ".");
+    }
+
     private List<String> parseRecipe(String selections) {
         String[] tokens = selections.split(",", -1);
         if (tokens.length != game.getNumIngredients()) {
             throw new IllegalArgumentException("Select " + game.getNumIngredients() + " ingredients.");
         }
-        List<String> available = game.getAvailableIngredients();
         List<String> recipe = new ArrayList<>();
         for (String token : tokens) {
-            String selection = token.strip();
-            if (selection.matches("[+-]?\\d+")) {
-                int index;
-                try {
-                    index = Integer.parseInt(selection);
-                }
-                catch (NumberFormatException error) {
-                    throw new IllegalArgumentException("Ingredient number is out of range.");
-                }
-                if (index < 1 || index > available.size()) {
-                    throw new IllegalArgumentException("Ingredient number is out of range.");
-                }
-                recipe.add(available.get(index - 1));
-            }
-            else {
-                String name = selection.toLowerCase(Locale.ROOT);
-                recipe.add(available.stream()
-                    .filter(ingredient -> ingredient.toLowerCase(Locale.ROOT).equals(name))
-                    .findFirst().orElseThrow(() ->
-                        new IllegalArgumentException("Unknown or locked ingredient: " + selection)));
-            }
+            recipe.add(resolveIngredient(token.strip()));
         }
         return recipe;
     }
 
+    private String resolveIngredient(String selection) {
+        List<String> available = game.getAvailableIngredients();
+        if (selection.matches("[+-]?\\d+")) {
+            int index;
+            try {
+                index = Integer.parseInt(selection);
+            }
+            catch (NumberFormatException error) {
+                throw new IllegalArgumentException("Ingredient number is out of range.");
+            }
+            if (index < 1 || index > available.size()) {
+                throw new IllegalArgumentException("Ingredient number is out of range.");
+            }
+            return available.get(index - 1);
+        }
+        return available.stream()
+            .filter(ingredient -> ingredient.equalsIgnoreCase(selection))
+            .findFirst().orElseThrow(() ->
+                new IllegalArgumentException("Enter an available ingredient number or name."));
+    }
+
+    private void redraw(String feedback) {
+        view.refresh();
+        showTurn();
+        view.showMessage(feedback);
+    }
+
     private void showTurn() {
-        view.showTurn(game.currentCustomer(), game.getAvailableIngredients(), game.getNumIngredients());
+        view.showTurn(game.currentCustomer(), game.getAvailableIngredients(),
+            game.getNumIngredients(), selected, game.getReputation());
     }
 }
 

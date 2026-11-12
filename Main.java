@@ -1,12 +1,17 @@
+import java.util.Scanner;
+
 public class Main {
-
-    // Instantiate player,
-
-    // Prompt for player name
-
-    // Instantiate game(player)
-
-    // Start game
-
-    // Ask if they want to play again or see their high score
+    public static void main(String[] args) {
+        ConsoleView view = new ConsoleView(new Scanner(System.in), System.out);
+        view.showMessage("Opening AlcheMarket...");
+        view.showMessage("Enter your name:");
+        String name = view.readLine();
+        while (name != null && name.isBlank()) {
+            view.showMessage("Invalid name. Enter your name:");
+            name = view.readLine();
+        }
+        if (name != null) {
+            new Validation(new Game(name.strip()), view).run();
+        }
+    }
 }

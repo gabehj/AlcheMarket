@@ -23,7 +23,9 @@ public class Player {
         if (oldRecipes == null) oldRecipes = new ArrayList<>();
 
         // Add new recipe and update saved recipes
-        oldRecipes.add(recipe);
+        if (!oldRecipes.contains(recipe)) {
+            oldRecipes.add(recipe);
+        }
         savedRecipes.put(potionName, oldRecipes);
     }
 
@@ -55,3 +57,4 @@ public class Player {
         this.reputation -= amount;
     }
 }
+

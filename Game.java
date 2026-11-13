@@ -1,121 +1,184 @@
 import java.util.ArrayList;
-import java.util.Queue;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Collections; // ArrayList.sort()
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Random;
+
 public class Game {
-    
-    double recipe_coverage = 0.75; // Fraction of recipes that don't result in duds
+    public enum Outcome {
+        CORRECT, WRONG_POTION, DUD, POISON
+    }
 
-    private int num_ingredients = 3;  // Number of ingredients for every recipe
-        
-    private ArrayList<String> ingredientNames; // All ingredients
-    private ArrayList<String> potionNames; // All potion names
-    private ArrayList<String> poisonNames; // All poison names
+    public static final class ServiceResult {
+        private final Outcome outcome;
+        private final String brewedPotion;
 
-    private ArrayList<ArrayList<String>> combos = new ArrayList<>(); // Stores all possible recipes
-
-    private ArrayList<Potion> potions = new ArrayList<>(); // Stores all potions
-
-    private Queue<Customer> customers = new Queue<>();
-
-    private int reputation = 50;
-
-    private Validation input = new Validation();
-
-    private int startingIngredients = 4;
-    private ArrayList<String> playerIngredients = new ArrayList<>();
-
-
-    public Game() {
-
-        System.out.print("Opening AlcheMarket... ");
-
-        brewDataStructures();
-
-        customers.add(new Customer());
-        customers.add(new Customer());
-        customers.add(new Customer());
-
-        // 
-        for (int i = 0; i < startingIngredients; i++) {
-            playerIngredients.add(ingredientNames.remove((int) (Math.random() * ingredientNames.size())));
+        private ServiceResult(Outcome outcome, String brewedPotion) {
+            this.outcome = outcome;
+            this.brewedPotion = brewedPotion;
         }
 
-        while (!customers.isEmpty()) {
-            Customer current = customers.remove();
-            System.out.println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~");
-            System.out.println(current.getIntroMessage());
+        public Outcome getOutcome() {
+            return outcome;
+        }
 
-            ArrayList<String> brew = input.brewPotion(playerIngredients, num_ingredients);
+        public String getBrewedPotion() {
+            return brewedPotion;
+        }
+    }
 
-            boolean isDud = true;
-            Potion playerPotion;
-            for (Potion potion : potions) {
-                for (ArrayList<String> recipe : potion.getRecipes()) {
-                    if (brew.equals(recipe)) {
-                        isDud = false;
-                        playerPotion = potion;
-                        break;
+    private static final int RECIPE_SIZE = 3;
+    private static final int STARTING_INGREDIENTS = 4;
+    private static final double RECIPE_COVERAGE = 0.75;
+
+    private List<String> ingredientNames;
+    private List<String> potionNames;
+    private List<String> poisonNames;
+    private final List<List<String>> combos = new ArrayList<>();
+    private final Map<List<String>, Potion> recipes = new HashMap<>();
+    private final LinkedQueue<Customer> customers = new LinkedQueue<>();
+    private final List<String> availableIngredients = new ArrayList<>();
+    private final List<String> lockedIngredients = new ArrayList<>();
+    private final Player player;
+    private final List<String> starterRecipe;
+
+    public Game() {
+        this("Paracelsus");
+    }
+
+    public Game(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Enter a player name.");
+        }
+        player = new Player(name);
+        player.setReputation(50);
+        Random random = new Random();
+        listNames();
+        Collections.sort(ingredientNames);
+        generateRecipeCombos(0, new ArrayList<>());
+        Collections.shuffle(combos, random);
+        generatePotions();
+
+        // The first assigned recipe is a normal potion, and its materials start unlocked.
+        starterRecipe = List.copyOf(combos.get(0));
+        availableIngredients.addAll(starterRecipe);
+        lockedIngredients.addAll(ingredientNames);
+        lockedIngredients.removeAll(availableIngredients);
+        Collections.shuffle(lockedIngredients, random);
+        while (availableIngredients.size() < STARTING_INGREDIENTS) {
+            unlockIngredient();
+        }
+
+        Potion starter = recipes.get(starterRecipe);
+        player.saveRecipe(starter.getName(), new ArrayList<>(starterRecipe));
+        customers.enqueue(new NormalCustomer("Villager", CustomerType.TOWNSPERSON,
+            starter.getName(), starterRecipe));
+        Random typeRandom = new Random();
+        CustomerType[] types = CustomerType.values();
+        customers.enqueue(createCustomer("Traveler", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Merchant", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Priest", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Magistrate", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Soldier", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Warlock", types[typeRandom.nextInt(types.length)], random));
+    }
+
+    private Customer createCustomer(String name, CustomerType type, Random random) {
+        List<List<String>> accessibleRecipes = new ArrayList<>();
+        for (int first = 0; first < availableIngredients.size() - 2; first++) {
+            for (int second = first + 1; second < availableIngredients.size() - 1; second++) {
+                for (int third = second + 1; third < availableIngredients.size(); third++) {
+                    List<String> recipe = new ArrayList<>(List.of(
+                        availableIngredients.get(first), availableIngredients.get(second),
+                        availableIngredients.get(third)));
+                    Collections.sort(recipe);
+                    Potion potion = recipes.get(recipe);
+                    if (potion != null && !potion.isPoison()) {
+                        accessibleRecipes.add(recipe);
                     }
                 }
             }
-
-            if (isDud) {
-                System.out.println(current.getDudMessage());
-                reputation -= 3;
-            }
-            else if (playerPotion.isPoison()) {
-                reputation -= 50;
-                System.out.println("The customer curls over and dies from your "+playerPotion.getName());
-            }
-            else {
-                boolean isCorrect = current.drinkPotion(playerPotion);
-
-                if (isCorrect) {
-                    current.getCorrectMessage()
-                    reputation += 15;
-                    String newIngredient = ingredientNames.remove((int) (Math.random() * ingredientNames.size()));
-                    playerIngredients.add(newIngredient);
-                    System.out.println("You received the new ingredient: "+newIngredient+"!");
-                    System.out.println("You now have "+playerIngredients.size()+" in your collection.");
-                }
-                else {
-                    current.getIncorrectMessage(playerPotion);
-                    reputation -= 10;
-                }
-            }
-
-            if (reputation <= 0) {
-                System.out.println("The villagers break into your laboratory, drag you into the town square, and burn you at the stake");
-                System.out.println("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ GAME OVER ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~");
-                break;
-            }
         }
-        System.out.print("Congratulations! You have satisfied all of the customers and become a master alchemist!");
+        List<String> recipe = accessibleRecipes.get(random.nextInt(accessibleRecipes.size()));
+        return new NormalCustomer(name, type, recipes.get(recipe).getName(),
+            recipe.subList(0, RECIPE_SIZE - 1));
     }
 
-    // Run all methods necessary to populate potions and ingredient data structures
-    public void brewDataStructures() {
-        
-        // Store item names in arraylist<String>'s
-        listNames();
+    public Outcome serve(List<String> ingredients) {
+        return serveWithDetails(ingredients).getOutcome();
+    }
 
-        // O(NlogN) // Sort ingredients alphabetically to make recipes unordered
-        Collections.sort(ingredientNames); 
-        
-        // Populate combination table with recipes
-        generateRecipeCombos(0, new ArrayList<String>()); 
-        System.out.println("Possible Potion Recipes: " + combos.size());
-        
-        // Scramble combos so potions are unpredictable
-        scrambleCombos();
+    public ServiceResult serveWithDetails(List<String> ingredients) {
+        if (customers.isEmpty()) {
+            throw new NoSuchElementException("No customers are waiting.");
+        }
+        if (isOver()) {
+            throw new IllegalStateException("The game has ended.");
+        }
+        List<String> recipe = validateRecipe(ingredients);
+        Potion potion = recipes.get(recipe);
+        Customer customer = customers.dequeue();
+        if (potion == null) {
+            player.decreaseReputation(3);
+            return new ServiceResult(Outcome.DUD, null);
+        }
+        player.saveRecipe(potion.getName(), new ArrayList<>(recipe));
+        if (potion.isPoison()) {
+            AsciiArt.printPoisoned();
+            player.decreaseReputation(50);
+            return new ServiceResult(Outcome.POISON, potion.getName());
+        }
+        if (!customer.getDesiredPotion().equals(potion.getName())) {
+            player.decreaseReputation(10);
+            return new ServiceResult(Outcome.WRONG_POTION, potion.getName());
+        }
+        player.increaseReputation(15);
+        unlockIngredient();
+        return new ServiceResult(Outcome.CORRECT, potion.getName());
+    }
 
-        // Populate potion list with potions and recipe combos
-        generatePotions();
+    private List<String> validateRecipe(List<String> ingredients) {
+        if (ingredients == null || ingredients.size() != RECIPE_SIZE) {
+            throw new IllegalArgumentException("Select " + RECIPE_SIZE + " ingredients.");
+        }
+        List<String> recipe = new ArrayList<>();
+        for (String ingredient : ingredients) {
+            if (!availableIngredients.contains(ingredient)) {
+                throw new IllegalArgumentException("Unknown or locked ingredient: " + ingredient);
+            }
+            if (recipe.contains(ingredient)) {
+                throw new IllegalArgumentException("Select different ingredients.");
+            }
+            recipe.add(ingredient);
+        }
+        Collections.sort(recipe);
+        return recipe;
+    }
+
+    private void unlockIngredient() {
+        if (!lockedIngredients.isEmpty()) {
+            availableIngredients.add(lockedIngredients.remove(lockedIngredients.size() - 1));
+        }
+    }
+
+    private void generatePotions() {
+        List<Potion> potions = new ArrayList<>();
+        for (String name : potionNames) {
+            potions.add(new Potion(name));
+        }
+        for (String name : poisonNames) {
+            potions.add(new Potion(name, true));
+        }
+        int assigned = (int) (RECIPE_COVERAGE * combos.size());
+        for (int index = 0; index < assigned; index++) {
+            recipes.put(combos.get(index), potions.get(index % potions.size()));
+        }
     }
 
     // List creative, human-ideated names for ingredients, potions, and poisons
-    public void listNames() {
+    private void listNames() {
         // ADD INGREDIENT NAMES HERE
         ingredientNames = new ArrayList<String>(List.of(
             "Mandrake Root", 
@@ -192,51 +255,20 @@ public class Game {
         ));
     }
 
-    //
-    // Space: O(P + N), where P is the # of potions and N is the # of combos
-    // Time:  O(P + N), where P is the # of potions and N is the # of combos
-    public void generatePotions() {
-        // Add potions to potion list
-        for (String potionName: potionNames) {
-            potions.add(new Potion(potionName));
-        }
-        for (String poisonName: poisonNames) {
-            potions.add(new Potion(poisonName, true));
-        }
-
-        // Add recipes to potions
-        for (int i = 0; i < (int)(recipe_coverage * combos.size()) ; i++) {
-            potions.get(i % potions.size()).addRecipe(combos.get(i));
-        }
-    }
-
-    //
-    // Space: O(1)
-    // Time:  O(N), where N is the length of combos
-    public void scrambleCombos() {
-        int random_index;
-        ArrayList<String> temp;
-        for (int i = 0; i < combos.size(); i++) {
-            random_index = (int) (Math.random() * ingredientNames.size());
-            temp = combos.get(i);
-            combos.set(i, combos.get(random_index));
-            combos.set(random_index, temp);
-        }
-    }
 
     // 
     // Space: O((N! / (M! * (N - M)!)) * M)  = O(M(C(N,M))), where N is the length of ingredentNames and M is the length of each Recipe
     // Time:  O((N! / (M! * (N - M)!)) * M)  = O(M(C(N,M))), where N is the length of ingredentNames and M is the length of each Recipe
-    public void generateRecipeCombos(int last_index, ArrayList<String> combo) {
+    private void generateRecipeCombos(int start, ArrayList<String> combo) {
         
         // Base Case: Add recipe to combos when it is complete
-        if (combo.size() == num_ingredients) combos.add(combo);
+        if (combo.size() == RECIPE_SIZE) combos.add(combo);
         
         // Recursive Step: Re-call function for each possible next ingredient that could be added, order maintained
         else {
             // Start at first possible ingredient addition, end at last ingredient addition that still leaves enough 
             // ingredients to reach the recipe length
-            for (int i=last_index; i < ingredientNames.size() - num_ingredients + combo.size() + 1; i++) {
+            for (int i=start; i < ingredientNames.size() - RECIPE_SIZE + combo.size() + 1; i++) {
                 // Add new ingredient to the current recipe
                 ArrayList<String> newCombo = new ArrayList<>(combo);
                 newCombo.add(ingredientNames.get(i));
@@ -248,24 +280,51 @@ public class Game {
     }
 
 
-    // GETTERS
+    public Customer currentCustomer() {
+        return customers.peek();
+    }
+
+    public boolean isOver() {
+        return customers.isEmpty() || getReputation() <= 0;
+    }
+
+    public int getReputation() {
+        return player.getReputation();
+    }
+
+    public int getScore() {
+        return getReputation() + getDiscoveredPotionCount();
+    }
+
+    public int getDiscoveredPotionCount() {
+        return player.getSavedRecipes().size();
+    }
+
+    public Map<String, List<List<String>>> getDiscoveredRecipes() {
+        Map<String, List<List<String>>> discoveries = new java.util.TreeMap<>();
+        player.getSavedRecipes().forEach((potion, recipesForPotion) -> {
+            List<List<String>> copies = new ArrayList<>();
+            for (List<String> recipe : recipesForPotion) {
+                copies.add(List.copyOf(recipe));
+            }
+            discoveries.put(potion, List.copyOf(copies));
+        });
+        return Collections.unmodifiableMap(discoveries);
+    }
+
+    public List<String> getIngredientNames() {
+        return List.copyOf(ingredientNames);
+    }
+
+    public List<String> getAvailableIngredients() {
+        return List.copyOf(availableIngredients);
+    }
+
+    public List<String> starterRecipe() {
+        return starterRecipe;
+    }
+
     public int getNumIngredients() {
-        return num_ingredients;
-    }
-
-    public double getRecipeCoverage() {
-        return recipe_coverage;
-    }
-
-    public ArrayList<Potion> getPotions() {
-        return potions;
-    }
-
-    public ArrayList<ArrayList<String>> getCombos() {
-        return combos;
-    }
-
-    public ArrayList<String> getIngredientNames() {
-        return ingredientNames;
+        return RECIPE_SIZE;
     }
 }

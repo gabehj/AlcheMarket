@@ -1,29 +1,13 @@
-import java.util.ArrayList;
-
 public class Test {
-
-    private static Game game = new Game();
     public static void main(String[] args) {
-
-        testGenerateRecipeCombos();
-
-        testGeneratePotions();
-    
-    }
-    
-    
-    public static void testGenerateRecipeCombos() {
-        int combos = 1;
-        for (int i = 0; i < game.getNumIngredients(); i++) {
-            combos *= (game.getIngredientNames().size() - i); // Calc permutations
-            combos /= (i+1); // Calc combinations
+        Game game = new Game("Paracelsus");
+        Customer first = game.currentCustomer();
+        Game.Outcome outcome = game.serve(game.starterRecipe());
+        if (outcome != Game.Outcome.CORRECT || game.getReputation() != 65
+            || game.currentCustomer() == first) {
+            throw new AssertionError("Serving the head customer did not advance the game.");
         }
-        System.out.println("Number of ingredients per potion: " + game.getNumIngredients());
-        System.out.println("Number of ingredient names: " + game.getIngredientNames().size());
-        System.out.println("Combos is correct length: "+ (game.getCombos().size()) + " = " + combos);
-    }
-
-    public static void testGeneratePotions() {
-        System.out.println("Potions: \n" + game.getPotions().get(game.getPotions().size() - 1));
+        System.out.println("Served " + first.getName() + "; reputation is " + game.getReputation());
+        System.out.println("Next customer: " + game.currentCustomer().getName());
     }
 }

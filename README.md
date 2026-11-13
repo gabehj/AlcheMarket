@@ -37,11 +37,11 @@ Separate brewing and serving, repeated ingredients within one recipe, and specia
 
 For Deliverable 4, we plan to finish the recipe book first, then add a special customer and test both changes together. The assignments below are proposed based on each member's work on the prototype.
 
-| Order | Task | Proposed owner | Verification |
-| --- | --- | --- | --- |
-| 1 | Make the recipe book easier to scan. Group recipes by potion, number each combination, and show the ingredient count and current ingredient numbers. Keep the current cauldron selection when the book is opened. | Sarah leads the controller and display changes. Gabe checks that the recipe data already exposes what the view needs. | Verify that a potion with multiple recipes shows each combination once and that opening the book preserves the selected ingredients, current customer, and reputation. |
-| 2 | Add Duke Lancaster as a special customer with a unique request, dialogue, and a one-time reward for correct delivery. | Greek defines the customer and dialogue. Gabe integrates the order and reward into the game model. Sarah connects the reward display. | Verify that the order can be brewed using available materials, correct delivery awards the bonus once, and a wrong potion or dud earns no bonus. |
-| 3 | Run the queue, controller, and game regression tests after both changes are integrated. | Kyra leads verification, with Greek and Sarah reviewing the new customer and console tests. | Verify that the special customer follows FIFO order, the original brew controls still work, and invalid commands and service after game over leave game state unchanged. |
+| Order | Task                                                                                                                                                                                                              | Proposed owner                                                                                                                        | Verification                                                                                                                                                             |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | Make the recipe book easier to scan. Group recipes by potion, number each combination, and show the ingredient count and current ingredient numbers. Keep the current cauldron selection when the book is opened. | Sarah leads the controller and display changes. Gabe checks that the recipe data already exposes what the view needs.                 | Verify that a potion with multiple recipes shows each combination once and that opening the book preserves the selected ingredients, current customer, and reputation.   |
+| 2     | Add Duke Lancaster as a special customer with a unique request, dialogue, and a one-time reward for correct delivery.                                                                                             | Greek defines the customer and dialogue. Gabe integrates the order and reward into the game model. Sarah connects the reward display. | Verify that the order can be brewed using available materials, correct delivery awards the bonus once, and a wrong potion or dud earns no bonus.                         |
+| 3     | Run the queue, controller, and game regression tests after both changes are integrated.                                                                                                                           | Kyra leads verification, with Greek and Sarah reviewing the new customer and console tests.                                           | Verify that the special customer follows FIFO order, the original brew controls still work, and invalid commands and service after game over leave game state unchanged. |
 
 **Change feature.** We will add `SpecialCustomer` as a subclass of `Customer`. The `Game(String, long)` constructor will enqueue Duke Lancaster at a defined position. `Game.serveWithDetails()` will apply the reward on correct delivery and expose it through `Game.ServiceResult`. `ConsoleView.showTurn()` will show the Duke's request, and `ConsoleView.showOutcome()` will show the reward. We expect `LinkedQueue.enqueue()`, `LinkedQueue.dequeue()`, and the `brew` branch of `Validation.processLine()` to work with the existing interface.
 
@@ -51,26 +51,26 @@ For recipe-book improvements, the `recipes` branch of `Validation.processLine()`
 
 ## Attribution
 
-| Class or test file | Contributor(s) | Work performed |
-| --- | --- | --- |
-| `AsciiArt.java` | Gabe | Added ASCII scenes. |
-| `ConsoleView.java` | Greek | Added customer dialogue and the cauldron display. |
-| `Customer.java` | Greek | Defined customer identity, type, order, and clue. |
-| `CustomerDialogue.java` | Greek | Added loading and selection for customer dialogue. |
-| `CustomerDialogueTest.java` | Greek, Kyra | Greek tested dialogue pools, wrong-order feedback, and ingredient selection. Kyra contributed customer testing. |
-| `CustomerType.java` | Greek | Defined the six ordinary customer types. |
-| `Game.java` | Gabe | Implemented the original game logic and potion mapping algorithm. |
-| `LinkedQueue.java` | Kyra | Drafted and refined the FIFO queue. |
-| `LinkedQueueTest.java` | Kyra | Drafted and refined the queue tests. |
-| `Main.java` | Sarah, Gabe | Sarah drafted the entry point. Gabe added the opening scene. |
-| `NormalCustomer.java` | Greek | Added the ordinary customer implementation. |
-| `Player.java` | Gabe | Implemented the original player class. |
-| `PlayerTest.java` | Kyra | Tested reputation updates and recipe history. |
-| `Potion.java` | Gabe | Implemented the original potion class. |
-| `PotionTest.java` | Kyra | Tested potion construction, poison flags, and recipe matching. |
-| `PrototypeTest.java` | Greek | Tested the model, invalid input, and both game endings. |
-| `Test.java` | Greek | Added the standalone model driver. |
-| `Validation.java` | Sarah, Greek | Sarah drafted the controller. Greek added keyboard brewing controls. |
+| Class or test file            | Contributor(s) | Work performed                                                                                                  |
+| ----------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `AsciiArt.java`             | Gabe           | Added ASCII scenes.                                                                                             |
+| `ConsoleView.java`          | Greek          | Added customer dialogue and the cauldron display.                                                               |
+| `Customer.java`             | Greek          | Defined customer identity, type, order, and clue.                                                               |
+| `CustomerDialogue.java`     | Greek          | Added loading and selection for customer dialogue.                                                              |
+| `CustomerDialogueTest.java` | Greek, Kyra    | Greek tested dialogue pools, wrong-order feedback, and ingredient selection. Kyra contributed customer testing. |
+| `CustomerType.java`         | Greek          | Defined the six ordinary customer types.                                                                        |
+| `Game.java`                 | Gabe           | Implemented the original game class. Created potion mapping algorithm.                                          |
+| `LinkedQueue.java`          | Kyra           | Drafted and refined the FIFO queue.                                                                             |
+| `LinkedQueueTest.java`      | Kyra           | Drafted and refined the queue tests.                                                                            |
+| `Main.java`                 | Sarah, Gabe    | Sarah drafted the entry point. Gabe added the opening scene.                                                    |
+| `NormalCustomer.java`       | Greek          | Added the ordinary customer implementation.                                                                     |
+| `Player.java`               | Gabe           | Implemented the original player class.                                                                          |
+| `PlayerTest.java`           | Kyra           | Tested reputation updates and recipe history.                                                                   |
+| `Potion.java`               | Gabe           | Implemented the original potion class.                                                                          |
+| `PotionTest.java`           | Kyra           | Tested potion construction, poison flags, and recipe matching.                                                  |
+| `PrototypeTest.java`        | Greek          | Tested the model, invalid input, and both game endings.                                                         |
+| `Test.java`                 | Greek          | Added the standalone model driver.                                                                              |
+| `Validation.java`           | Sarah, Greek   | Sarah drafted the controller. Greek added keyboard brewing controls.                                            |
 
 ## GenAI Note
 

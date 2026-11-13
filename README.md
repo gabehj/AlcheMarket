@@ -1,9 +1,9 @@
 # AlcheMarket
 
-| Person | Task                                                                                       | GenAI |
-| ------ | ------------------------------------------------------------------------------------------ | ----- |
-| Gabe   | Programmed Game Class, Potion Class, and Player Class. Made algorithm for potion mappings. | None  |
-|        |                                                                                            |       |
+| Person | Task                                                                                       | GenAI                        |
+| ------ | ------------------------------------------------------------------------------------------ | ---------------------------- |
+| Gabe   | Programmed Game Class, Potion Class, and Player Class. Made algorithm for potion mappings. | Used Sonnet to make AsciiArt |
+|        |                                                                                            |                              |
 
 ## Model Works
 

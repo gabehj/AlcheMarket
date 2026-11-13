@@ -2,6 +2,10 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
+
+        AsciiArt art = new AsciiArt();
+        System.out.println(art.getTitle());
+        
         ConsoleView view = new ConsoleView(new Scanner(System.in), System.out);
         view.showMessage("Opening AlcheMarket...");
         view.showMessage("Enter your name:");

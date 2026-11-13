@@ -3,7 +3,7 @@
 | Person | Task                                                                                       | GenAI                        |
 | ------ | ------------------------------------------------------------------------------------------ | ---------------------------- |
 | Gabe   | Programmed Game Class, Potion Class, and Player Class. Made algorithm for potion mappings. | Used Sonnet to make AsciiArt |
-|        |                                                                                            |                              |
+| Kyra   | Added Tests such as PotionTest, PlayerTest, and Customertest                               | Review what needed to add/remove |
 
 ## Model Works
 

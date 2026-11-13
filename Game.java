@@ -126,6 +126,7 @@ public class Game {
         }
         player.saveRecipe(potion.getName(), new ArrayList<>(recipe));
         if (potion.isPoison()) {
+            AsciiArt.printPoisoned();
             player.decreaseReputation(50);
             return new ServiceResult(Outcome.POISON, potion.getName());
         }

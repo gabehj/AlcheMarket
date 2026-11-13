@@ -4,6 +4,9 @@ import java.util.*;
  * ALCHEMARKET - a 256-colour ANSI alchemist's lab (112 x 44 cells).
  * Compile: javac AlcheMarket.java
  * Run:     java AlcheMarket      (terminal must be at least 112 cols x 44 rows)
+ * Grimoire: java AlcheMarket grimoire   (small recipe-book picture)
+ * Scale:    java AlcheMarket scale       (balance scale weighing overflowing gold)
+ * Poison:   java AlcheMarket poison      (an unlucky customer drinks the wrong potion)
  */
 public class AsciiArt {
     static final int W = 112, H = 44;
@@ -106,9 +109,205 @@ public class AsciiArt {
             }
     }
 
+    // ---------------------------------------------------------------- rendering
+    static void clearGrid() {
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++) { ch[y][x] = ' '; fg[y][x] = 7; bg[y][x] = 0; }
+    }
+
+    /** Turns a rectangle of the canvas into a string of ANSI escape codes. */
+    static String render(int x0, int y0, int w, int h) {
+        StringBuilder sb = new StringBuilder();
+        for (int y = y0; y < y0 + h; y++) {
+            int cf = -1, cb = -1;
+            for (int x = x0; x < x0 + w; x++) {
+                if (fg[y][x] != cf) { sb.append("\u001b[38;5;").append(fg[y][x]).append('m'); cf = fg[y][x]; }
+                if (bg[y][x] != cb) { sb.append("\u001b[48;5;").append(bg[y][x]).append('m'); cb = bg[y][x]; }
+                sb.append(ch[y][x]);
+            }
+            sb.append("\u001b[0m\n");
+        }
+        return sb.toString();
+    }
+
+    static void center(int x, int w, int y, String s, int f, int b) {
+        put(x + (w - s.length()) / 2, y, s, f, b);
+    }
+
+    /**
+     * Prints a small (46 x 19 cell) picture of the AlcheMarket recipe grimoire:
+     * a leather-bound book lying open on a recipe page, with a ribbon bookmark.
+     * Call it from game code, or run:  java AlcheMarket grimoire
+     */
+    public static void printGrimoire() {
+        clearGrid();
+        fill(0, 0, 46, 17, '#', 94, 52);                              // leather cover
+        for (int y = 1; y < 16; y++) for (int x = 0; x < 46; x++)
+            if (rnd.nextDouble() < 0.12) put(x, y, '%', 130);
+        fill(0, 0, 46, 1, '=', 180, 52);
+        fill(0, 16, 46, 1, '=', 180, 52);
+        put(10, 0, " GRIMOIRE OF ALCHEMARKET ", 220, 52);
+        for (int[] c : new int[][]{{0, 0}, {45, 0}, {0, 16}, {45, 16}}) put(c[0], c[1], '+', 220, 52);
+
+        fill(2, 1, 20, 14, ' ', 52, 223);                              // parchment pages
+        fill(24, 1, 20, 14, ' ', 52, 223);
+        for (int y = 1; y < 15; y++) { put(22, y, ')', 94, 223); put(23, y, '(', 94, 223); }
+
+        // left page: ingredients and a potion
+        center(2, 20, 2, "Elixir of Vigor", 124, 223);
+        center(2, 20, 3, rep("~", 16), 94, 223);
+        String[] ingredients = {"2 sprigs Moonpetal", "1 vial Wyrm Blood", "3 drops Mercury", "1 pinch Bone Dust"};
+        for (int i = 0; i < ingredients.length; i++) {
+            put(3, 5 + i, ingredients[i].substring(0, 1), 124);
+            put(4, 5 + i, ingredients[i].substring(1), 52);
+        }
+        spr(9, 10, FLASK, 240, cm('#', '#', 201, -1));
+
+        // right page: method, warning, runes and a wax seal
+        center(24, 20, 2, "Method", 124, 223);
+        center(24, 20, 3, rep("~", 16), 94, 223);
+        String[] steps = {"Grind petals", "Warm the blood", "Add mercury", "Stir thrice", "Bottle at dusk"};
+        for (int i = 0; i < steps.length; i++) {
+            put(25, 5 + i, (i + 1) + ".", 124);
+            put(28, 5 + i, steps[i], 52);
+        }
+        center(24, 20, 11, "Do NOT drink raw!", 196, 223);
+        put(26, 13, "+ x # & % @ $ *", 135);
+        put(39, 12, "(@)", 196);
+
+        put(22, 17, "||", 196);                                        // ribbon bookmark
+        put(22, 18, "\\/", 196);
+        System.out.print(render(0, 0, 46, 19));
+    }
+
+    /**
+     * Prints a small (50 x 22 cell) picture of a brass balance scale: the left pan is heaped
+     * with overflowing gold (so the beam tips down), coins spilling onto the table, while the
+     * right pan holds a single 1g weight. Call it from game code, or run:  java AlcheMarket scale
+     */
+    public static void printScale() {
+        clearGrid();
+        fill(0, 19, 50, 1, '=', 180, 94);                              // table
+        fill(0, 20, 50, 1, '#', 94, 52);
+        put(19, 18, "/___________\\", 178);                            // pedestal and pillar
+        for (int y = 6; y < 18; y++) put(24, y, "[#]", 178);
+        put(25, 3, '^', 220); put(25, 4, '|', 220);
+        line(7, 8, 43, 2, '=', 178);                                   // beam, tipped toward the gold
+        put(24, 5, "(@)", 220);
+        line(7, 8, 1, 14, '/', 245); line(7, 8, 13, 14, '\\', 245);   // chains
+        line(43, 2, 37, 8, '/', 245); line(43, 2, 49, 8, '\\', 245);
+        put(1, 14, "\\___________/", 178);                            // heavy (left) pan
+        put(2, 15, "\\_________/", 178);
+        put(3, 16, "'-------'", 136);
+        put(37, 8, "\\___________/", 178);                            // light (right) pan
+        put(38, 9, "\\_________/", 178);
+        put(39, 10, "'-------'", 136);
+        put(41, 7, "[1g]", 245); put(46, 7, '~', 250);                  // one small weight and a feather
+
+        int[][] pile = {{9, 3}, {10, 5}, {11, 7}, {12, 9}, {13, 11}};  // {row, width}: the gold heap
+        for (int[] r : pile)
+            for (int i = 0; i < r[1]; i++)
+                put(7 - r[1] / 2 + i, r[0], pickc("@O0$o"), pick(220, 226, 178, 214, 184), 94);
+        put(1, 13, 'o', 220); put(13, 13, '@', 226);                   // coins on the rim
+        for (int[] sp : new int[][]{{6, 10}, {9, 12}, {4, 12}, {7, 9}, {11, 11}}) put(sp[0], sp[1], '*', 230, 94);
+        for (int[] f : new int[][]{{14, 12}, {16, 14}, {15, 16}, {17, 17}}) put(f[0], f[1], 'o', 220);  // falling coins
+        for (int x = 6; x <= 17; x++) {                                // coins spilled across the table
+            if (rnd.nextDouble() < 0.75) put(x, 18, pickc("o@0"), pick(220, 226, 178));
+            if (x >= 11 && x <= 16 && rnd.nextDouble() < 0.6) put(x, 17, pickc("o@0"), pick(220, 226, 178));
+        }
+        for (int[] sp : new int[][]{{0, 8}, {2, 6}, {12, 9}, {15, 11}, {9, 7}}) put(sp[0], sp[1], '+', 230);
+        center(0, 50, 21, "~ ALCHEMARKET ASSAY SCALE ~", 220, -1);
+        System.out.print(render(0, 0, 50, 22));
+    }
+
+    static void puddle(int pcx, int pcy, double prx, double pry, String chars, int c1, int c2, int c3) {
+        for (int y = 16; y <= 19; y++)
+            for (int x = pcx - (int) prx - 1; x <= pcx + (int) prx + 1; x++) {
+                double a = (x - pcx) / prx, b = (y - pcy) / pry;
+                if (a * a + b * b <= 1) put(x, y, pickc(chars), pick(c1, c2, c3), 22);
+            }
+    }
+
+    /**
+     * Prints a small (50 x 22 cell) horror-comedy "game over" picture: a customer on his knees,
+     * X-eyed, bleeding from the eyes, foaming and vomiting green after drinking a poisoned potion,
+     * one hand clawing his throat and the other reaching for the spilled flask while a ghost
+     * skull rises from the fumes. Call it from game code, or run:  java AlcheMarket poison
+     */
+    public static void printPoisoned() {
+        clearGrid();
+        for (int y = 0; y < 16; y++)                                   // wall, lit green by the spill
+            for (int x = 0; x < 50; x++) {
+                double d = Math.hypot((x - 38) / 2.2, y - 14);
+                ch[y][x] = ((x + 4 * (y % 2)) % 9 == 0) ? '|' : '_';
+                fg[y][x] = d < 6 ? 29 : d < 11 ? 23 : 238;
+                bg[y][x] = d < 6 ? 22 : 233;
+            }
+        for (int y = 16; y < 22; y++)                                  // stone floor
+            for (int x = 0; x < 50; x++) {
+                ch[y][x] = y == 16 ? '=' : ((x + y * 5) % 17 == 0 ? '|' : '-');
+                fg[y][x] = y == 16 ? 94 : 58;
+                bg[y][x] = 52;
+            }
+
+        // kneeling customer: robe, then head
+        String[] robe = {
+                "    ,---'   '---.    ",
+                "  ,'   |     |   '.  ",
+                " /     |     |     \\ ",
+                "|      |     |      |",
+                "|========[#]========|",
+                "|      |     |      |",
+                "|______|_____|______|"};
+        spr(7, 9, robe, 88, cm('=', '=', 220, -1, '[', '[', 220, -1, '#', '#', 220, -1, ']', ']', 220, -1), 52);
+        String[] head = {
+                "   .-'''''-.   ",
+                "  /         \\  ",
+                " |  X     X  | ",
+                " |     ^     | ",
+                " |  .-vvv-.  | ",
+                "  \\ '-ooo-' /  ",
+                "   '-.___.-'   "};
+        for (int r = 1; r <= 5; r++) fill(12, 2 + r, 11, 1, ' ', 7, 151);   // sickly green skin
+        spr(10, 2, head, 94, cm('X', 'X', 232, 151, 'v', 'v', 118, 22, 'o', 'o', 255, 22));
+        put(14, 5, ':', 196); put(20, 5, ':', 196);                    // blood tears
+        put(14, 6, '|', 196); put(20, 6, '|', 196);
+        put(13, 3, '~', 28); put(21, 3, '~', 28); put(12, 4, '/', 28); put(22, 4, '\\', 28);   // green veins
+        put(17, 8, '|', 46);                                           // dribbling drool
+
+        // hand clawing the throat, other arm reaching for the flask
+        spr(15, 9, new String[]{"\\\\|//", "(___)"}, 223, null);
+        line(14, 10, 11, 13, '=', 223); put(10, 13, 'o', 223);
+        line(27, 11, 34, 14, '=', 88); line(27, 12, 34, 15, '=', 124);
+        put(35, 14, "-,", 223); put(35, 15, "-'", 223);
+
+        // the fallen poison flask
+        String[] flask = {
+                "   .-------. ",
+                "==(  #####  )",
+                "]=(  #(x)#  )",
+                "   '-------' "};
+        fill(40, 13, 9, 2, ' ', 7, 22);
+        spr(37, 12, flask, 250, cm('#', '#', 46, 22, 'x', 'x', 231, 22, '=', '=', 178, -1, ']', ']', 94, -1));
+        put(38, 15, 'o', 46);
+
+        puddle(38, 17, 9, 1.3, "~~~o'", 46, 40, 82);                   // spilled poison
+        puddle(17, 17, 9, 1.4, "~~ov%", 118, 70, 106);                 // vomit with chunks
+        for (int k = 0; k < 14; k++) put(3 + rnd.nextInt(28), 16 + rnd.nextInt(3), pickc(".:'"), pick(124, 196));
+
+        // ghost skull rising from the fumes
+        spr(35, 2, new String[]{" .-. ", "(x.x)", " \\v/ "}, 118, null);
+        for (int y = 11; y >= 5; y--)
+            put(37 + (int) Math.round(Math.sin(y) * 2), y, pickc("~)(~"), pick(118, 71, 35));
+
+        center(0, 50, 20, "~ Potion No. 7 was NOT a healing potion ~", 244, 52);
+        center(0, 50, 21, "Y O U   D I E D", 196, 52);
+        System.out.print(render(0, 0, 50, 22));
+    }
+
     // ---------------------------------------------------------------- scene
-    public StringBuilder getTitle() {
-        for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) { ch[y][x] = ' '; fg[y][x] = 7; bg[y][x] = 0; }
+    static public void printMain() {
+        clearGrid();
 
         // stone wall lit by the fire
         final int FX = 52, FY = 32;
@@ -323,21 +522,14 @@ public class AsciiArt {
 
         // title plate
         fill(0, 42, W, 1, '=', 94, 52);
-        String title = "*  A L C H E M A R K E T  *   -   Prices, Potions & Poisons";
+        String title = "*  A L C H E M A R K E T  *   -   Potions, Reagents & Rare Curios";
         fill(0, 43, W, 1, ' ', 220, 0);
         put((W - title.length()) / 2, 43, title, 220, 0);
 
-        // render
-        StringBuilder sb = new StringBuilder();
-        for (int y = 0; y < H; y++) {
-            int cf = -1, cb = -1;
-            for (int x = 0; x < W; x++) {
-                if (fg[y][x] != cf) { sb.append("\u001b[38;5;").append(fg[y][x]).append('m'); cf = fg[y][x]; }
-                if (bg[y][x] != cb) { sb.append("\u001b[48;5;").append(bg[y][x]).append('m'); cb = bg[y][x]; }
-                sb.append(ch[y][x]);
-            }
-            sb.append("\u001b[0m\n");
-        }
-        return sb;
+        System.out.print(render(0, 0, W, H));
+    }
+
+    public static void main(String[] args) {
+        return;
     }
 }

@@ -3,8 +3,7 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
 
-        AsciiArt art = new AsciiArt();
-        System.out.println(art.getTitle());
+        AsciiArt.printMain();
         
         ConsoleView view = new ConsoleView(new Scanner(System.in), System.out);
         view.showMessage("Opening AlcheMarket...");

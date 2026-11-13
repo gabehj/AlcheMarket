@@ -1,6 +1,6 @@
 public class Test {
     public static void main(String[] args) {
-        Game game = new Game("Paracelsus", 15L);
+        Game game = new Game("Paracelsus");
         Customer first = game.currentCustomer();
         Game.Outcome outcome = game.serve(game.starterRecipe());
         if (outcome != Game.Outcome.CORRECT || game.getReputation() != 65

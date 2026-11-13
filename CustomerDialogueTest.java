@@ -11,7 +11,7 @@ import org.junit.Test;
 public class CustomerDialogueTest {
     @Test
     public void selectsOneIngredientAtATimeAndOnlyServesOnBrew() {
-        Game game = new Game("Tester", 15L);
+        Game game = new Game("Tester");
         Customer first = game.currentCustomer();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleView view = new ConsoleView(new Scanner(
@@ -62,7 +62,7 @@ public class CustomerDialogueTest {
 
     @Test
     public void redisplayReusesGreetingAndWrongPotionNamesBothOrders() {
-        Game game = new Game("Tester", 15L);
+        Game game = new Game("Tester");
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleView view = new ConsoleView(new Scanner(""),
             new PrintStream(output, true, StandardCharsets.UTF_8));

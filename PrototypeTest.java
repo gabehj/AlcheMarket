@@ -12,7 +12,7 @@ import org.junit.Test;
 public class PrototypeTest {
     @Test
     public void modelServesThreeCustomersWithoutAView() {
-        Game game = new Game("Tester", 15L);
+        Game game = new Game("Tester");
         Customer first = game.currentCustomer();
         List<String> recipe = game.starterRecipe();
         List<String> reversed = List.of(recipe.get(2), recipe.get(1), recipe.get(0));
@@ -29,7 +29,7 @@ public class PrototypeTest {
 
     @Test
     public void controllerRejectsScopeInputsThenRunsToCompletion() {
-        Game game = new Game("Tester", 15L);
+        Game game = new Game("Tester");
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleView view = new ConsoleView(new Scanner(new StringReader("")),
             new PrintStream(output, true, StandardCharsets.UTF_8));
@@ -62,7 +62,7 @@ public class PrototypeTest {
 
     @Test
     public void modelRejectsInvalidSelectionsWithoutServing() {
-        Game game = new Game("Tester", 15L);
+        Game game = new Game("Tester");
         Customer first = game.currentCustomer();
         assertThrows(IllegalArgumentException.class, () -> game.serve(null));
         assertThrows(IllegalArgumentException.class, () -> game.serve(List.of("Unknown")));

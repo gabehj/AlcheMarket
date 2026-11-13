@@ -1,5 +1,10 @@
 # AlcheMarket
 
+| Person | Task                                                                                       | GenAI |
+| ------ | ------------------------------------------------------------------------------------------ | ----- |
+| Gabe   | Programmed Game Class, Potion Class, and Player Class. Made algorithm for potion mappings. | None  |
+|        |                                                                                            |       |
+
 ## Model Works
 
 `Game` holds the recipes, reputation, and customer queue. It uses a singly linked `LinkedQueue<Customer>` to serve customers in arrival order. The model accepts ingredient selections and returns a service result without reading from or writing to the console.

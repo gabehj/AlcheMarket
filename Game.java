@@ -45,20 +45,16 @@ public class Game {
     private final List<String> starterRecipe;
 
     public Game() {
-        this("Paracelsus", new Random().nextLong());
+        this("Paracelsus");
     }
 
     public Game(String name) {
-        this(name, new Random().nextLong());
-    }
-
-    public Game(String name, long seed) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Enter a player name.");
         }
         player = new Player(name);
         player.setReputation(50);
-        Random random = new Random(seed);
+        Random random = new Random();
         listNames();
         Collections.sort(ingredientNames);
         generateRecipeCombos(0, new ArrayList<>());
@@ -79,10 +75,14 @@ public class Game {
         player.saveRecipe(starter.getName(), new ArrayList<>(starterRecipe));
         customers.enqueue(new NormalCustomer("Villager", CustomerType.TOWNSPERSON,
             starter.getName(), starterRecipe));
-        Random typeRandom = new Random(~seed);
+        Random typeRandom = new Random();
         CustomerType[] types = CustomerType.values();
         customers.enqueue(createCustomer("Traveler", types[typeRandom.nextInt(types.length)], random));
         customers.enqueue(createCustomer("Merchant", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Priest", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Magistrate", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Soldier", types[typeRandom.nextInt(types.length)], random));
+        customers.enqueue(createCustomer("Warlock", types[typeRandom.nextInt(types.length)], random));
     }
 
     private Customer createCustomer(String name, CustomerType type, Random random) {
@@ -327,4 +327,3 @@ public class Game {
         return RECIPE_SIZE;
     }
 }
-

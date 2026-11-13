@@ -95,7 +95,7 @@ public class Validation {
         if (selected.contains(ingredient)) {
             throw new IllegalArgumentException("That ingredient is already in the cauldron.");
         }
-        if (selected.size() == Game.MAX_RECIPE_SIZE) {
+        if (selected.size() == Game.RECIPE_SIZE) {
             throw new IllegalArgumentException("Cauldron is full. Use brew, undo, or reset.");
         }
         selected.add(ingredient);
@@ -104,8 +104,8 @@ public class Validation {
 
     private List<String> parseRecipe(String selections) {
         String[] tokens = selections.split(",", -1);
-        if (tokens.length < Game.MIN_RECIPE_SIZE || tokens.length > Game.MAX_RECIPE_SIZE) {
-            throw new IllegalArgumentException("Select 2 to 5 ingredients.");
+        if (tokens.length != Game.RECIPE_SIZE) {
+            throw new IllegalArgumentException("Select 3 ingredients.");
         }
         List<String> recipe = new ArrayList<>();
         for (String token : tokens) {

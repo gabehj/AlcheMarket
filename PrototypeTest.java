@@ -19,9 +19,7 @@ public class PrototypeTest {
         assertEquals(Game.Outcome.CORRECT, game.serve(reversed));
         assertEquals(65, game.getReputation());
         assertNotSame(first, game.currentCustomer());
-        for (List<Integer> order : List.of(List.of(1, 4), List.of(1, 2, 3, 5),
-            List.of(1, 2, 3, 4, 5), List.of(1, 2, 4, 5), List.of(1, 3, 5, 8),
-            List.of(1, 2, 4, 5))) {
+        for (List<Integer> order : List.of(List.of(1, 2, 3), List.of(1, 2, 4), List.of(2, 3, 4), List.of(2, 3, 4), List.of(1, 2, 3), List.of(2, 3, 4))) {
             List<String> available = game.getAvailableIngredients();
             List<String> selection = new java.util.ArrayList<>();
             for (int index : order) {
@@ -46,7 +44,7 @@ public class PrototypeTest {
             .filter(name -> !game.getAvailableIngredients().contains(name))
             .findFirst().orElseThrow();
         for (String badInput : List.of("", "unknown", "brew", "brew 1",
-            "brew 1,2,3,4,5,6", "brew -1,2,3", "brew 999,2,3",
+            "brew 1,2", "brew 1,2,3,4", "brew -1,2,3", "brew 999,2,3",
             "brew 99999999999999999999,2,3", "brew abc,2,3",
             "brew Mandrak Root,2,3", "brew 1,1,2",
             "brew " + locked + ",2,3")) {
@@ -57,11 +55,10 @@ public class PrototypeTest {
             assertEquals(50, game.getReputation());
         }
         String brew = "brew " + String.join(",", game.starterRecipe());
-        for (String order : List.of(brew, "brew 1,4", "brew 1,2,3,5",
-            "brew 1,2,3,4,5", "brew 1,2,4,5", "brew 1,3,5,8")) {
+        for (String order : List.of(brew, brew, "brew 1,2,4", "brew 2,3,4", "brew 2,3,4", brew)) {
             assertTrue(controller.processLine(order));
         }
-        assertFalse(controller.processLine("brew 1,2,4,5"));
+        assertFalse(controller.processLine("brew 2,3,4"));
         assertTrue(output.toString(StandardCharsets.UTF_8).contains("Quest complete"));
         output.reset();
         assertFalse(controller.processLine(brew));
@@ -81,7 +78,7 @@ public class PrototypeTest {
         PrintStream original = System.out;
         try (PrintStream captured = new PrintStream(modelOutput, true, StandardCharsets.UTF_8)) {
             System.setOut(captured);
-            assertFalse(controller.processLine("brew 3,4,5"));
+            assertFalse(controller.processLine("brew 1,2,4"));
         }
         finally {
             System.setOut(original);

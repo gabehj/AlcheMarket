@@ -21,16 +21,16 @@ public class CustomerDialogueTest {
         new Validation(game, view).run();
 
         String transcript = output.toString(StandardCharsets.UTF_8);
-        assertTrue(transcript.contains("Cauldron  [1] + [ ] + [ ] + [ ] + [ ]"));
-        assertTrue(transcript.contains("Cauldron  [1] + [2] + [3] + [ ] + [ ]"));
+        assertTrue(transcript.contains("Cauldron  [1] + [ ] + [ ]"));
+        assertTrue(transcript.contains("Cauldron  [1] + [2] + [3]"));
         assertTrue(transcript.contains("Cauldron cleared."));
         assertTrue(transcript.contains("already in the cauldron"));
-        assertTrue(transcript.contains("Select 2 to 5 ingredients."));
+        assertTrue(transcript.contains("Select 3 ingredients."));
         assertNotSame(first, game.currentCustomer());
         assertEquals(65, game.getReputation());
         int nextOrder = transcript.lastIndexOf("Order   " + game.currentCustomer().getDesiredPotion());
         assertTrue(nextOrder >= 0);
-        assertTrue(transcript.substring(nextOrder).contains("Cauldron  [ ] + [ ] + [ ] + [ ] + [ ]"));
+        assertTrue(transcript.substring(nextOrder).contains("Cauldron  [ ] + [ ] + [ ]"));
     }
 
     @Test
@@ -80,12 +80,13 @@ public class CustomerDialogueTest {
         assertEquals(firstDisplay, output.toString(StandardCharsets.UTF_8));
 
         controller.processLine("brew 1,2,3");
+        controller.processLine("brew 1,2,3");
         Customer second = game.currentCustomer();
         output.reset();
         assertTrue(controller.processLine("brew 1,2,3"));
         String wrong = output.toString(StandardCharsets.UTF_8);
         assertTrue(wrong.contains(second.getName() + ": "));
-        assertTrue(wrong.contains("Ordered: Luck of a Leprechaun"));
+        assertTrue(wrong.contains("Ordered: " + second.getDesiredPotion()));
         assertTrue(wrong.contains("Delivered: Healing"));
     }
 }

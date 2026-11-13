@@ -73,14 +73,14 @@ public class ConsoleView {
                 selected.contains(ingredient) ? "[x]" : "[ ]", ingredient);
         }
         StringJoiner slots = new StringJoiner(" + ");
-        for (int index = 0; index < Game.MAX_RECIPE_SIZE; index++) {
+        for (int index = 0; index < Game.RECIPE_SIZE; index++) {
             slots.add(index < selected.size()
                 ? "[" + (ingredients.indexOf(selected.get(index)) + 1) + "]" : "[ ]");
         }
         showMessage("");
         showMessage("Cauldron  " + slots);
-        showMessage("Choose 2 to 5 distinct ingredients.");
-        showMessage(selected.size() >= Game.MIN_RECIPE_SIZE ? "Ready. Type brew to serve."
+        showMessage("Choose 3 distinct ingredients.");
+        showMessage(selected.size() == Game.RECIPE_SIZE ? "Ready. Type brew to serve."
             : "Type an ingredient number to fill the next slot.");
         showMessage("undo  Last pick    reset  Clear    recipes  Book    quit  Exit");
         showMessage(DIVIDER);

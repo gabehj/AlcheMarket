@@ -29,8 +29,10 @@ public class Game {
         }
     }
 
-    private static final int RECIPE_SIZE = 3;
-    private static final int STARTING_INGREDIENTS = 4;
+    private static final int STARTER_RECIPE_SIZE = 3;
+    public static final int MIN_RECIPE_SIZE = 2;
+    public static final int MAX_RECIPE_SIZE = 5;
+    private static final int STARTING_INGREDIENTS = MAX_RECIPE_SIZE;
     private static final double RECIPE_COVERAGE = 0.75;
 
     private List<String> ingredientNames;
@@ -38,6 +40,8 @@ public class Game {
     private List<String> poisonNames;
     private final List<List<String>> combos = new ArrayList<>();
     private final Map<List<String>, Potion> recipes = new HashMap<>();
+    private final List<Potion> potions = new ArrayList<>();
+    private final Random recipeRandom;
     private final LinkedQueue<Customer> customers = new LinkedQueue<>();
     private final List<String> availableIngredients = new ArrayList<>();
     private final List<String> lockedIngredients = new ArrayList<>();
@@ -49,12 +53,17 @@ public class Game {
     }
 
     public Game(String name) {
+        this(name, new Random().nextLong());
+    }
+
+    public Game(String name, long seed) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Enter a player name.");
         }
         player = new Player(name);
         player.setReputation(50);
-        Random random = new Random();
+        Random random = new Random(seed);
+        recipeRandom = new Random(seed ^ 0x5DEECE66DL);
         listNames();
         Collections.sort(ingredientNames);
         generateRecipeCombos(0, new ArrayList<>());
@@ -75,35 +84,35 @@ public class Game {
         player.saveRecipe(starter.getName(), new ArrayList<>(starterRecipe));
         customers.enqueue(new NormalCustomer("Villager", CustomerType.TOWNSPERSON,
             starter.getName(), starterRecipe));
-        Random typeRandom = new Random();
+        Random typeRandom = new Random(~seed);
         CustomerType[] types = CustomerType.values();
-        customers.enqueue(createCustomer("Traveler", types[typeRandom.nextInt(types.length)], random));
-        customers.enqueue(createCustomer("Merchant", types[typeRandom.nextInt(types.length)], random));
-        customers.enqueue(createCustomer("Priest", types[typeRandom.nextInt(types.length)], random));
-        customers.enqueue(createCustomer("Magistrate", types[typeRandom.nextInt(types.length)], random));
-        customers.enqueue(createCustomer("Soldier", types[typeRandom.nextInt(types.length)], random));
-        customers.enqueue(createCustomer("Warlock", types[typeRandom.nextInt(types.length)], random));
+        String[] names = {"Traveler", "Merchant", "Priest", "Magistrate", "Soldier", "Warlock"};
+        int[] orderLengths = {2, 4, 5, 0, 0, 0};
+        for (int index = 0; index < names.length; index++) {
+            customers.enqueue(createCustomer(names[index], types[typeRandom.nextInt(types.length)],
+                random, orderLengths[index]));
+        }
     }
 
-    private Customer createCustomer(String name, CustomerType type, Random random) {
+    private Customer createCustomer(String name, CustomerType type, Random random, int length) {
         List<List<String>> accessibleRecipes = new ArrayList<>();
-        for (int first = 0; first < availableIngredients.size() - 2; first++) {
-            for (int second = first + 1; second < availableIngredients.size() - 1; second++) {
-                for (int third = second + 1; third < availableIngredients.size(); third++) {
-                    List<String> recipe = new ArrayList<>(List.of(
-                        availableIngredients.get(first), availableIngredients.get(second),
-                        availableIngredients.get(third)));
-                    Collections.sort(recipe);
-                    Potion potion = recipes.get(recipe);
-                    if (potion != null && !potion.isPoison()) {
-                        accessibleRecipes.add(recipe);
-                    }
-                }
+        for (Map.Entry<List<String>, Potion> entry : recipes.entrySet()) {
+            List<String> recipe = entry.getKey();
+            if ((length == 0 || recipe.size() == length) && !entry.getValue().isPoison()
+                && availableIngredients.containsAll(recipe)) {
+                accessibleRecipes.add(recipe);
             }
         }
+        accessibleRecipes.sort((first, second) -> {
+            int order = Integer.compare(first.size(), second.size());
+            for (int i = 0; order == 0 && i < first.size(); i++) {
+                order = first.get(i).compareTo(second.get(i));
+            }
+            return order;
+        });
         List<String> recipe = accessibleRecipes.get(random.nextInt(accessibleRecipes.size()));
         return new NormalCustomer(name, type, recipes.get(recipe).getName(),
-            recipe.subList(0, RECIPE_SIZE - 1));
+            recipe.subList(0, recipe.size() - 1));
     }
 
     public Outcome serve(List<String> ingredients) {
@@ -126,7 +135,6 @@ public class Game {
         }
         player.saveRecipe(potion.getName(), new ArrayList<>(recipe));
         if (potion.isPoison()) {
-            AsciiArt.printPoisoned();
             player.decreaseReputation(50);
             return new ServiceResult(Outcome.POISON, potion.getName());
         }
@@ -140,8 +148,9 @@ public class Game {
     }
 
     private List<String> validateRecipe(List<String> ingredients) {
-        if (ingredients == null || ingredients.size() != RECIPE_SIZE) {
-            throw new IllegalArgumentException("Select " + RECIPE_SIZE + " ingredients.");
+        if (ingredients == null || ingredients.size() < MIN_RECIPE_SIZE
+            || ingredients.size() > MAX_RECIPE_SIZE) {
+            throw new IllegalArgumentException("Select 2 to 5 ingredients.");
         }
         List<String> recipe = new ArrayList<>();
         for (String ingredient : ingredients) {
@@ -159,12 +168,35 @@ public class Game {
 
     private void unlockIngredient() {
         if (!lockedIngredients.isEmpty()) {
-            availableIngredients.add(lockedIngredients.remove(lockedIngredients.size() - 1));
+            String ingredient = lockedIngredients.remove(lockedIngredients.size() - 1);
+            addUnlockedRecipes(0, new ArrayList<>(List.of(ingredient)));
+            availableIngredients.add(ingredient);
+        }
+    }
+
+    private void addUnlockedRecipes(int start, List<String> selection) {
+        int size = selection.size();
+        if (size >= MIN_RECIPE_SIZE && size != STARTER_RECIPE_SIZE) {
+            List<String> key = new ArrayList<>(selection);
+            Collections.sort(key);
+            // The first available recipe of each length must be safe to order.
+            boolean firstOfLength = availableIngredients.size() == size - 1;
+            if (firstOfLength || recipeRandom.nextDouble() < RECIPE_COVERAGE) {
+                int choices = firstOfLength ? potionNames.size() : potions.size();
+                recipes.put(key, potions.get(recipeRandom.nextInt(choices)));
+            }
+        }
+        if (size == MAX_RECIPE_SIZE) {
+            return;
+        }
+        for (int index = start; index < availableIngredients.size(); index++) {
+            selection.add(availableIngredients.get(index));
+            addUnlockedRecipes(index + 1, selection);
+            selection.remove(selection.size() - 1);
         }
     }
 
     private void generatePotions() {
-        List<Potion> potions = new ArrayList<>();
         for (String name : potionNames) {
             potions.add(new Potion(name));
         }
@@ -262,13 +294,13 @@ public class Game {
     private void generateRecipeCombos(int start, ArrayList<String> combo) {
         
         // Base Case: Add recipe to combos when it is complete
-        if (combo.size() == RECIPE_SIZE) combos.add(combo);
+        if (combo.size() == STARTER_RECIPE_SIZE) combos.add(combo);
         
         // Recursive Step: Re-call function for each possible next ingredient that could be added, order maintained
         else {
             // Start at first possible ingredient addition, end at last ingredient addition that still leaves enough 
             // ingredients to reach the recipe length
-            for (int i=start; i < ingredientNames.size() - RECIPE_SIZE + combo.size() + 1; i++) {
+            for (int i=start; i < ingredientNames.size() - STARTER_RECIPE_SIZE + combo.size() + 1; i++) {
                 // Add new ingredient to the current recipe
                 ArrayList<String> newCombo = new ArrayList<>(combo);
                 newCombo.add(ingredientNames.get(i));
@@ -324,7 +356,4 @@ public class Game {
         return starterRecipe;
     }
 
-    public int getNumIngredients() {
-        return RECIPE_SIZE;
-    }
 }

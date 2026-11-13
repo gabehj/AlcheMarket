@@ -45,7 +45,7 @@ public class ConsoleView {
         output.flush();
     }
 
-    public void showTurn(Customer customer, List<String> ingredients, int count,
+    public void showTurn(Customer customer, List<String> ingredients,
         List<String> selected, int reputation) {
         if (greetedCustomer != customer) {
             greeting = dialogue.draw(customer.getType(), CustomerDialogue.Event.GREETING,
@@ -73,13 +73,14 @@ public class ConsoleView {
                 selected.contains(ingredient) ? "[x]" : "[ ]", ingredient);
         }
         StringJoiner slots = new StringJoiner(" + ");
-        for (int index = 0; index < count; index++) {
+        for (int index = 0; index < Game.MAX_RECIPE_SIZE; index++) {
             slots.add(index < selected.size()
                 ? "[" + (ingredients.indexOf(selected.get(index)) + 1) + "]" : "[ ]");
         }
         showMessage("");
         showMessage("Cauldron  " + slots);
-        showMessage(selected.size() == count ? "Ready. Type brew to serve."
+        showMessage("Choose 2 to 5 distinct ingredients.");
+        showMessage(selected.size() >= Game.MIN_RECIPE_SIZE ? "Ready. Type brew to serve."
             : "Type an ingredient number to fill the next slot.");
         showMessage("undo  Last pick    reset  Clear    recipes  Book    quit  Exit");
         showMessage(DIVIDER);
@@ -103,6 +104,7 @@ public class ConsoleView {
                 showMessage("The ingredients produced no potion.");
                 break;
             case POISON:
+                AsciiArt.printPoisoned(output);
                 showMessage("The brew was poison.");
                 break;
         }

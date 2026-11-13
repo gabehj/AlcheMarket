@@ -11,26 +11,26 @@ import org.junit.Test;
 public class CustomerDialogueTest {
     @Test
     public void selectsOneIngredientAtATimeAndOnlyServesOnBrew() {
-        Game game = new Game("Tester");
+        Game game = new Game("Tester", 15L);
         Customer first = game.currentCustomer();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleView view = new ConsoleView(new Scanner(
-            "1\n1\n2\nundo\nreset\n1\n2\nbrew\n3\nundo\n3\nbrew\nquit\n"),
+            "1\n1\n2\nundo\nreset\n1\nbrew\n2\n3\nundo\n3\nbrew\nquit\n"),
             new PrintStream(output, true, StandardCharsets.UTF_8));
 
         new Validation(game, view).run();
 
         String transcript = output.toString(StandardCharsets.UTF_8);
-        assertTrue(transcript.contains("Cauldron  [1] + [ ] + [ ]"));
-        assertTrue(transcript.contains("Cauldron  [1] + [2] + [3]"));
+        assertTrue(transcript.contains("Cauldron  [1] + [ ] + [ ] + [ ] + [ ]"));
+        assertTrue(transcript.contains("Cauldron  [1] + [2] + [3] + [ ] + [ ]"));
         assertTrue(transcript.contains("Cauldron cleared."));
         assertTrue(transcript.contains("already in the cauldron"));
-        assertTrue(transcript.contains("Select 3 ingredients before brewing."));
+        assertTrue(transcript.contains("Select 2 to 5 ingredients."));
         assertNotSame(first, game.currentCustomer());
         assertEquals(65, game.getReputation());
-        int nextOrder = transcript.lastIndexOf("Order   Healing");
+        int nextOrder = transcript.lastIndexOf("Order   " + game.currentCustomer().getDesiredPotion());
         assertTrue(nextOrder >= 0);
-        assertTrue(transcript.substring(nextOrder).contains("Cauldron  [ ] + [ ] + [ ]"));
+        assertTrue(transcript.substring(nextOrder).contains("Cauldron  [ ] + [ ] + [ ] + [ ] + [ ]"));
     }
 
     @Test
@@ -62,30 +62,29 @@ public class CustomerDialogueTest {
 
     @Test
     public void redisplayReusesGreetingAndWrongPotionNamesBothOrders() {
-        Game game = new Game("Tester");
+        Game game = new Game("Tester", 15L);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleView view = new ConsoleView(new Scanner(""),
             new PrintStream(output, true, StandardCharsets.UTF_8));
         Validation controller = new Validation(game, view);
         Customer first = game.currentCustomer();
-        view.showTurn(first, game.getAvailableIngredients(), game.getNumIngredients(),
+        view.showTurn(first, game.getAvailableIngredients(),
             List.of(), game.getReputation());
         String firstDisplay = output.toString(StandardCharsets.UTF_8);
         output.reset();
         controller.processLine("brew 999,2,3");
         assertFalse(output.toString(StandardCharsets.UTF_8).contains(first.getName() + ": "));
         output.reset();
-        view.showTurn(first, game.getAvailableIngredients(), game.getNumIngredients(),
+        view.showTurn(first, game.getAvailableIngredients(),
             List.of(), game.getReputation());
         assertEquals(firstDisplay, output.toString(StandardCharsets.UTF_8));
 
         controller.processLine("brew 1,2,3");
-        controller.processLine("brew 1,2,3");
-        Customer third = game.currentCustomer();
+        Customer second = game.currentCustomer();
         output.reset();
-        assertFalse(controller.processLine("brew 1,2,3"));
+        assertTrue(controller.processLine("brew 1,2,3"));
         String wrong = output.toString(StandardCharsets.UTF_8);
-        assertTrue(wrong.contains(third.getName() + ": "));
+        assertTrue(wrong.contains(second.getName() + ": "));
         assertTrue(wrong.contains("Ordered: Luck of a Leprechaun"));
         assertTrue(wrong.contains("Delivered: Healing"));
     }

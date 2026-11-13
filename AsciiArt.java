@@ -235,6 +235,10 @@ public class AsciiArt {
      * skull rises from the fumes. Call it from game code, or run:  java AlcheMarket poison
      */
     public static void printPoisoned() {
+        printPoisoned(System.out);
+    }
+
+    public static void printPoisoned(java.io.PrintStream output) {
         clearGrid();
         for (int y = 0; y < 16; y++)                                   // wall, lit green by the spill
             for (int x = 0; x < 50; x++) {
@@ -302,7 +306,7 @@ public class AsciiArt {
 
         center(0, 50, 20, "~ Potion No. 7 was NOT a healing potion ~", 244, 52);
         center(0, 50, 21, "Y O U   D I E D", 196, 52);
-        System.out.print(render(0, 0, 50, 22));
+        output.print(render(0, 0, 50, 22));
     }
 
     // ---------------------------------------------------------------- scene

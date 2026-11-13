@@ -65,10 +65,6 @@ public class Validation {
                 return true;
             }
             List<String> recipe = command.length == 2 ? parseRecipe(command[1]) : selected;
-            if (recipe.size() != game.getNumIngredients()) {
-                throw new IllegalArgumentException("Select " + game.getNumIngredients()
-                    + " ingredients before brewing.");
-            }
             Game.ServiceResult result = game.serveWithDetails(recipe);
             selected.clear();
             view.refresh();
@@ -99,7 +95,7 @@ public class Validation {
         if (selected.contains(ingredient)) {
             throw new IllegalArgumentException("That ingredient is already in the cauldron.");
         }
-        if (selected.size() == game.getNumIngredients()) {
+        if (selected.size() == Game.MAX_RECIPE_SIZE) {
             throw new IllegalArgumentException("Cauldron is full. Use brew, undo, or reset.");
         }
         selected.add(ingredient);
@@ -108,8 +104,8 @@ public class Validation {
 
     private List<String> parseRecipe(String selections) {
         String[] tokens = selections.split(",", -1);
-        if (tokens.length != game.getNumIngredients()) {
-            throw new IllegalArgumentException("Select " + game.getNumIngredients() + " ingredients.");
+        if (tokens.length < Game.MIN_RECIPE_SIZE || tokens.length > Game.MAX_RECIPE_SIZE) {
+            throw new IllegalArgumentException("Select 2 to 5 ingredients.");
         }
         List<String> recipe = new ArrayList<>();
         for (String token : tokens) {
@@ -147,7 +143,7 @@ public class Validation {
 
     private void showTurn() {
         view.showTurn(game.currentCustomer(), game.getAvailableIngredients(),
-            game.getNumIngredients(), selected, game.getReputation());
+            selected, game.getReputation());
     }
 }
 

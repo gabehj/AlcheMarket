@@ -300,6 +300,11 @@ public class Game {
         return customers.peek();
     }
 
+    public List<String> waitingCustomerNames() {
+        return customers.snapshot().stream().skip(1).map(Customer::getName)
+            .collect(java.util.stream.Collectors.toUnmodifiableList());
+    }
+
     public boolean isOver() {
         return customers.isEmpty() || getReputation() <= 0;
     }

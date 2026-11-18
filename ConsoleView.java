@@ -1,26 +1,56 @@
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.StringJoiner;
+import java.util.function.Function;
 
 public class ConsoleView {
     private static final String DIVIDER = "----------------------------------------------------------------";
+    private static final String GOLD = "1;33";
+    private static final String CYAN = "1;36";
+    private static final String GREEN = "1;32";
+    private static final String RED = "1;31";
+    private static final String MUTED = "90";
     private final Scanner input;
     private final PrintStream output;
     private final boolean interactiveTerminal;
+    private final boolean colorEnabled;
     private final CustomerDialogue dialogue = new CustomerDialogue();
     private final Random dialogueRandom = new Random();
-    private Customer greetedCustomer;
-    private String greeting;
+    private final int width;
 
     public ConsoleView(Scanner input, PrintStream output) {
+        this(input, output, terminalWidth(System.getenv("COLUMNS")));
+    }
+
+    ConsoleView(Scanner input, PrintStream output, int width) {
+        this(input, output, width, isInteractive(output));
+    }
+
+    ConsoleView(Scanner input, PrintStream output, int width, boolean interactiveTerminal) {
+        this.width = Math.max(40, width);
         this.input = input;
         this.output = output;
+        this.interactiveTerminal = interactiveTerminal;
+        colorEnabled = interactiveTerminal && System.getenv("NO_COLOR") == null;
+    }
+
+    private static boolean isInteractive(PrintStream output) {
         String term = System.getenv("TERM");
-        interactiveTerminal = output == System.out && System.console() != null
-            && (System.getenv("WT_SESSION") != null || (term != null && !term.equals("dumb")));
+        return output == System.out && System.console() != null
+            && ("vscode".equalsIgnoreCase(System.getenv("TERM_PROGRAM")) || System.getenv("WT_SESSION") != null || (term != null && !term.equals("dumb")));
+    }
+
+    private static int terminalWidth(String columns) {
+        try {
+            return Integer.parseInt(columns);
+        }
+        catch (NumberFormatException error) {
+            return 100;
+        }
     }
 
     public String readLine() {
@@ -41,144 +71,253 @@ public class ConsoleView {
     }
 
     public void prompt() {
-        output.print("apothecary> ");
+        output.print(color("apothecary> ", CYAN));
         output.flush();
     }
 
+    public String greetingFor(Customer customer) {
+        return dialogue.draw(customer.getType(), CustomerDialogue.Event.GREETING,
+            customer.getDesiredPotion(), "", dialogueRandom);
+    }
+
     public void showTurn(Customer customer, List<String> ingredients,
-        List<String> selected, int reputation) {
-        if (greetedCustomer != customer) {
-            greeting = dialogue.draw(customer.getType(), CustomerDialogue.Event.GREETING,
-                customer.getDesiredPotion(), "", dialogueRandom);
-            greetedCustomer = customer;
+        List<String> selected, int reputation, List<String> waiting, String greeting,
+        String feedback) {
+        int inner = width - 4;
+        String title = "ALCHEMARKET";
+        String status = "Reputation " + reputation;
+        border(width);
+        showMessage(edge("| ") + color(title, GOLD)
+            + " ".repeat(inner - title.length() - status.length())
+            + color(status, reputation <= 0 ? RED : GOLD) + edge(" |"));
+        border(width);
+
+        List<String> order = new ArrayList<>();
+        order.add("CURRENT CUSTOMER");
+        order.add("");
+        order.add(customer.getName() + " / " + customer.getType());
+        order.add("Order   " + customer.getDesiredPotion());
+        if (greeting != null) {
+            order.add("");
+            order.add(customer.getName() + ": " + greeting);
         }
-        showMessage(DIVIDER);
-        showMessage("  ALCHEMARKET                                  Reputation " + reputation);
-        showMessage(DIVIDER);
-        showMessage("Customer   " + customer.getName() + " / " + customer.getType());
-        showMessage("Order   " + customer.getDesiredPotion());
-        showMessage("");
-        showDialogue(customer, greeting);
         if (!customer.getClue().isEmpty()) {
-            showMessage("");
-            showMessage("Recipe clue");
-            customer.getClue().forEach(ingredient -> showMessage("  - " + ingredient));
+            order.add("");
+            order.add("Recipe clue");
+            customer.getClue().forEach(ingredient -> order.add("- " + ingredient));
         }
 
-        showMessage("");
-        showMessage("Ingredients");
+        List<String> table = new ArrayList<>();
+        table.add("BREWING TABLE");
+        table.add("");
+        StringJoiner slots = new StringJoiner(" + ");
+        StringJoiner boxes = new StringJoiner("   ");
+        for (int index = 0; index < Game.RECIPE_SIZE; index++) {
+            String number = index < selected.size()
+                ? Integer.toString(ingredients.indexOf(selected.get(index)) + 1) : " ";
+            slots.add("[" + number + "]");
+            boxes.add(String.format("| %2s |", number));
+        }
+        table.add("+----+   +----+   +----+");
+        table.add(boxes.toString());
+        table.add("+----+   +----+   +----+");
+        table.add("+=====================+");
+        table.add("  ||               ||");
+        table.add("");
+        table.add("Cauldron  " + slots);
+        table.add(selected.size() == Game.RECIPE_SIZE ? "Ready. Press B to brew."
+            : "Select " + (Game.RECIPE_SIZE - selected.size()) + " more.");
+
+        List<String> shelf = new ArrayList<>();
+        shelf.add("INGREDIENTS");
+        shelf.add("");
         for (int index = 0; index < ingredients.size(); index++) {
             String ingredient = ingredients.get(index);
-            output.printf("  %2d. %s %s%n", index + 1,
-                selected.contains(ingredient) ? "[x]" : "[ ]", ingredient);
+            shelf.add(String.format("%2d. %s %s", index + 1,
+                selected.contains(ingredient) ? "[x]" : "[ ]", ingredient));
         }
-        StringJoiner slots = new StringJoiner(" + ");
-        for (int index = 0; index < Game.RECIPE_SIZE; index++) {
-            slots.add(index < selected.size()
-                ? "[" + (ingredients.indexOf(selected.get(index)) + 1) + "]" : "[ ]");
+
+        Function<String, String> orderColor = line -> {
+            if (line.startsWith("Order   ")) {
+                return GOLD;
+            }
+            if (line.equals("CURRENT CUSTOMER") || line.equals("Recipe clue")) {
+                return CYAN;
+            }
+            return "";
+        };
+        Function<String, String> tableColor = line -> {
+            if (line.startsWith("Ready.") || (!selected.isEmpty()
+                && (line.startsWith("Cauldron") || line.startsWith("| ")))) {
+                return GREEN;
+            }
+            if (line.equals("BREWING TABLE")) {
+                return CYAN;
+            }
+            return "";
+        };
+        Function<String, String> shelfColor = line -> {
+            if (line.contains("[x]")) {
+                return GREEN;
+            }
+            return line.equals("INGREDIENTS") ? CYAN : "";
+        };
+        if (width >= 82) {
+            int left = (width - 10) / 3;
+            int center = left;
+            int right = width - 10 - left - center;
+            String divider = "+" + "-".repeat(left + 2) + "+"
+                + "-".repeat(center + 2) + "+" + "-".repeat(right + 2) + "+";
+            List<String> leftLines = panel(order, left, orderColor);
+            List<String> centerLines = panel(table, center, tableColor);
+            List<String> rightLines = panel(shelf, right, shelfColor);
+            int height = Math.max(leftLines.size(), Math.max(centerLines.size(), rightLines.size()));
+            for (int index = 0; index < height; index++) {
+                showMessage(edge("| ") + lineAt(leftLines, index, left)
+                    + edge(" | ") + lineAt(centerLines, index, center)
+                    + edge(" | ") + lineAt(rightLines, index, right) + edge(" |"));
+            }
+            showMessage(edge(divider));
         }
-        showMessage("");
-        showMessage("Cauldron  " + slots);
-        showMessage("Choose 3 distinct ingredients.");
-        showMessage(selected.size() == Game.RECIPE_SIZE ? "Ready. Type brew to serve."
-            : "Type an ingredient number to fill the next slot.");
-        showMessage("undo  Last pick    reset  Clear    recipes  Book    quit  Exit");
-        showMessage(DIVIDER);
+        else {
+            showPanel(order, inner, orderColor);
+            showPanel(table, inner, tableColor);
+            showPanel(shelf, inner, shelfColor);
+        }
+
+        showMessage(edge("| ") + panel(List.of(waitingLine(waiting, inner)), inner,
+            line -> CYAN).get(0) + edge(" |"));
+        border(width);
+        if (!feedback.isBlank()) {
+            panel(List.of(feedback), inner, ConsoleView::feedbackColor)
+                .forEach(line -> showMessage(edge("| ") + line + edge(" |")));
+        }
+        wrap(List.of("Number Select  U Undo  X Clear  B Brew  R Recipes  Q Quit"), inner)
+            .forEach(line -> row(line, inner));
+        border(width);
     }
 
-    public void showOutcome(Customer customer, Game.ServiceResult result, int reputation) {
-        showMessage("");
-        
-        // Dramatic Pause
-        output.print("Brewing");
-        try {
-            for (int i = 0; i < 3; i++) {
-                output.print(" .");
-                output.flush();
-                Thread.sleep(300);
-            }
-            output.println(" Complete!");
-            Thread.sleep(400);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
+    private static String waitingLine(List<String> waiting, int limit) {
+        String line = "WAITING";
+        if (waiting.isEmpty()) {
+            return line + "  [none]";
         }
+        for (int index = 0; index < waiting.size(); index++) {
+            String card = "  [" + (index + 1) + " " + waiting.get(index) + "]";
+            int remaining = waiting.size() - index - 1;
+            String overflow = remaining > 0 ? "  [+" + remaining + " more]" : "";
+            if (line.length() + card.length() + overflow.length() > limit) {
+                return line + "  [+" + (remaining + 1) + " more]";
+            }
+            line += card;
+        }
+        return line;
+    }
 
+    private static List<String> wrap(List<String> lines, int limit) {
+        List<String> result = new ArrayList<>();
+        for (String line : lines) {
+            while (line.length() > limit) {
+                int end = line.lastIndexOf(' ', limit);
+                if (end <= 0) {
+                    end = limit;
+                }
+                result.add(line.substring(0, end));
+                line = line.substring(end).stripLeading();
+            }
+            result.add(line);
+        }
+        return result;
+    }
 
+    private List<String> panel(List<String> lines, int columns, Function<String, String> style) {
+        List<String> result = new ArrayList<>();
+        for (String line : lines) {
+            for (String part : wrap(List.of(line), columns)) {
+                result.add(color(part, style.apply(line)) + " ".repeat(columns - part.length()));
+            }
+        }
+        return result;
+    }
+
+    private void showPanel(List<String> lines, int columns, Function<String, String> style) {
+        panel(lines, columns, style)
+            .forEach(line -> showMessage(edge("| ") + line + edge(" |")));
+        border(width);
+    }
+
+    private static String lineAt(List<String> lines, int index, int columns) {
+        return index < lines.size() ? lines.get(index) : " ".repeat(columns);
+    }
+
+    private void row(String line, int innerWidth) {
+        showMessage(edge("| ") + line + " ".repeat(innerWidth - line.length()) + edge(" |"));
+    }
+
+    private void border(int frameWidth) {
+        showMessage(edge("+" + "-".repeat(frameWidth - 2) + "+"));
+    }
+
+    private String edge(String text) {
+        return color(text, MUTED);
+    }
+
+    private String color(String text, String style) {
+        return colorEnabled && !style.isEmpty() && !text.isEmpty()
+            ? "\033[" + style + "m" + text + "\033[0m" : text;
+    }
+
+    private static String feedbackColor(String feedback) {
+        if (feedback.startsWith("Delivered:")) {
+            return GREEN;
+        }
+        if (feedback.startsWith("Invalid selection.") || feedback.startsWith("The brew was poison.")) {
+            return RED;
+        }
+        if (feedback.startsWith("Ordered:") || feedback.startsWith("The ingredients produced no potion.")) {
+            return GOLD;
+        }
+        return "";
+    }
+
+    public void showFeedback(String feedback) {
+        showMessage(color(feedback, feedbackColor(feedback)));
+    }
+
+    public String describeOutcome(Customer customer, Game.ServiceResult result) {
+        String brewed = result.getBrewedPotion();
         switch (result.getOutcome()) {
             case CORRECT:
-                output.println("You crafted: Potion of "+result.getBrewedPotion()+"!");
-                output.println("Sell to "+customer.getName()+" -> ");
-                input.nextLine();
-                showReaction(customer, CustomerDialogue.Event.CORRECT, result.getBrewedPotion());
-                
-                try {
-                    Thread.sleep(700);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-
-                break;
+                return "Delivered: " + brewed + ". "
+                    + reaction(customer, CustomerDialogue.Event.CORRECT, brewed);
             case WRONG_POTION:
-                output.println("You crafted: Potion of "+result.getBrewedPotion()+"!");
-                output.println("Sell to "+customer.getName()+"... maybe they won't notice? -> ");
-                input.nextLine();
-                showReaction(customer, CustomerDialogue.Event.WRONG, result.getBrewedPotion());
-                showMessage("Ordered: " + customer.getDesiredPotion()
-                    + " | Delivered: " + result.getBrewedPotion());
-                
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-                
-                break;
+                return "Ordered: " + customer.getDesiredPotion() + " | Delivered: " + brewed
+                    + ". " + reaction(customer, CustomerDialogue.Event.WRONG, brewed);
             case DUD:
-                showMessage("It was a DUD. The ingredients produced no potion.");
-                output.println("Tell the "+customer.getName()+" that it can only be brewed during a blood moon -> ");
-                input.nextLine();
-                break;
+                return "The ingredients produced no potion.";
             case POISON:
-                showMessage("You crafted: "+result.getBrewedPotion());
-                output.println("Sell to "+customer.getName()+". It's probably harmless -> ");
-                input.nextLine();
-                AsciiArt.printPoisoned(output);
-                showMessage("The "+customer.getName()+" begins to writh on the ground, the flesh sloughing off their skin.");
-                showMessage("They let out a tortuos howl, which is cut short only as the foul brew dissolves their throat. ");
-                showMessage("Oops. Maybe later you'll brew a potion to bring them back. In the meantime, back to business!");
-                input.nextLine();
-                break;
+                return "The brew was poison. " + customer.getName() + " died.";
+            default:
+                throw new IllegalStateException("Unexpected brewing result");
         }
-
-        showMessage("Reputation: " + reputation);
     }
 
-    private void showReaction(Customer customer, CustomerDialogue.Event event, String brewed) {
-        showDialogue(customer, dialogue.draw(customer.getType(), event,
-            customer.getDesiredPotion(), brewed, dialogueRandom));
+    private String reaction(Customer customer, CustomerDialogue.Event event, String brewed) {
+        return customer.getName() + ": " + dialogue.draw(customer.getType(), event,
+            customer.getDesiredPotion(), brewed, dialogueRandom);
     }
 
-    private void showDialogue(Customer customer, String text) {
-        String line = customer.getName() + ":";
-        for (String word : text.split(" ")) {
-            if (line.length() + word.length() + 1 > DIVIDER.length()) {
-                showMessage(line);
-                line = " ";
-            }
-            line += " " + word;
-        }
-        showMessage(line);
+    public void showPoisonScene() {
+        AsciiArt.printPoisoned(output);
     }
+
 
     public void showRecipeBook(Map<String, List<List<String>>> recipes) {
         showMessage("");
-        showMessage("Recipe book");
+        showMessage(color("Recipe book", CYAN));
         showMessage(DIVIDER);
         recipes.forEach((potion, combinations) -> {
-            showMessage(potion);
+            showMessage(color(potion, GOLD));
             for (List<String> recipe : combinations) {
                 recipe.forEach(ingredient -> showMessage("  - " + ingredient));
                 showMessage("");
@@ -201,7 +340,7 @@ public class ConsoleView {
         fail +=     "\nmob crashes through your laboratory and drags you into the town square.";
         fail +=     "\nThere, you are burned at the stake, while jeered at from the crowd.";
 
-        showMessage(reputation > 0 ? success : fail);
+        showMessage(reputation > 0 ? color(success, GREEN) : color(fail, RED));
         showMessage("Reputation: " + reputation);
         showMessage("Potion types discovered: " + discoveries);
         

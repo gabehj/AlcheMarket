@@ -18,6 +18,7 @@ public class Validation {
     private final Game game;
     private final ConsoleView view;
     private final List<String> selected = new ArrayList<>();
+    private String greeting;
 
     public Validation(Game game, ConsoleView view) {
         this.game = game;
@@ -25,7 +26,8 @@ public class Validation {
     }
 
     public void run() {
-        showTurn();
+        greeting = view.greetingFor(game.currentCustomer());
+        redraw("");
         view.prompt();
         while (processLine(view.readLine())) {
             view.prompt();
@@ -37,10 +39,23 @@ public class Validation {
             return false;
         }
         String input = line.strip();
+        switch (input.toLowerCase(Locale.ROOT)) {
+            case "b": input = "brew"; break;
+            case "r": input = "recipes"; break;
+            case "u": input = "undo"; break;
+            case "x": input = "reset"; break;
+            case "q": return false;
+            default: break;
+        }
         String[] command = input.split("\\s+", 2);
         switch (input.toLowerCase(Locale.ROOT)) {
             case "recipes":
                 view.showRecipeBook(game.getDiscoveredRecipes());
+                view.showMessage("Press Enter to return to the counter.");
+                if (view.readLine() == null) {
+                    return false;
+                }
+                redraw("");
                 return true;
             case "reset":
                 selected.clear();
@@ -48,7 +63,7 @@ public class Validation {
                 return true;
             case "undo":
                 if (selected.isEmpty()) {
-                    view.showMessage("The cauldron is already empty.");
+                    redraw("The cauldron is already empty.");
                 }
                 else {
                     selected.remove(selected.size() - 1);
@@ -58,6 +73,8 @@ public class Validation {
             default:
                 break;
         }
+        String feedback;
+        Game.ServiceResult result;
         try {
             Customer customer = game.currentCustomer();
             if (!command[0].equalsIgnoreCase("brew")) {
@@ -65,13 +82,12 @@ public class Validation {
                 return true;
             }
             List<String> recipe = command.length == 2 ? parseRecipe(command[1]) : selected;
-            Game.ServiceResult result = game.serveWithDetails(recipe);
+            result = game.serveWithDetails(recipe);
             selected.clear();
-            view.refresh();
-            view.showOutcome(customer, result, game.getReputation());
+            feedback = view.describeOutcome(customer, result);
         }
         catch (IllegalArgumentException error) {
-            view.showMessage("Invalid selection. " + error.getMessage());
+            redraw("Invalid selection. " + error.getMessage());
             return true;
         }
         catch (NoSuchElementException error) {
@@ -83,10 +99,16 @@ public class Validation {
             return false;
         }
         if (game.isOver()) {
+            view.refresh();
+            if (result.getOutcome() == Game.Outcome.POISON) {
+                view.showPoisonScene();
+            }
+            view.showFeedback(feedback);
             view.showScore(game.getReputation(), game.getDiscoveredPotionCount());
             return false;
         }
-        showTurn();
+        greeting = view.greetingFor(game.currentCustomer());
+        redraw(feedback);
         return true;
     }
 
@@ -137,12 +159,7 @@ public class Validation {
 
     private void redraw(String feedback) {
         view.refresh();
-        showTurn();
-        view.showMessage(feedback);
-    }
-
-    private void showTurn() {
         view.showTurn(game.currentCustomer(), game.getAvailableIngredients(),
-            selected, game.getReputation());
+            selected, game.getReputation(), game.waitingCustomerNames(), greeting, feedback);
     }
 }

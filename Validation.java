@@ -83,7 +83,7 @@ public class Validation {
             return false;
         }
         if (game.isOver()) {
-            view.showScore(game.getReputation(), game.getDiscoveredPotionCount(), game.getScore());
+            view.showScore(game.getReputation(), game.getDiscoveredPotionCount());
             return false;
         }
         showTurn();
@@ -146,4 +146,3 @@ public class Validation {
             selected, game.getReputation());
     }
 }
-

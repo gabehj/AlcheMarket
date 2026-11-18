@@ -90,6 +90,9 @@ public class ConsoleView {
         showMessage("");
         showMessage("Result");
         showMessage(DIVIDER);
+
+        showMessage(DIVIDER);
+
         switch (result.getOutcome()) {
             case CORRECT:
                 showReaction(customer, CustomerDialogue.Event.CORRECT, result.getBrewedPotion());
@@ -142,12 +145,16 @@ public class ConsoleView {
         showMessage(DIVIDER);
     }
 
-    public void showScore(int reputation, int discoveries, int score) {
+    public void showScore(int reputation, int discoveries) {
+
         showMessage("");
         showMessage(DIVIDER);
-        showMessage(reputation > 0 ? "Quest complete!" : "Game over.");
+        String success = "Quest complete! You become the most renowned alchemist's of all the reals! Envied by rivals, admired by customers, and respected by kingdoms, your potion-making skills are truly impressive!\nV I C T O R Y ! ! !";
+        String fail = "The villagers have had enough with your charaltan snake oil. Soon, an angry mob crashes through your laboratory and drags you into the town square. There, you are burned at the stake, while jeered at from the crowd. \nG A M E   O V E R";
+        showMessage(reputation > 0 ? success : fail);
         showMessage("Reputation: " + reputation);
         showMessage("Potion types discovered: " + discoveries);
-        showMessage("Score: " + score);
+        int score = reputation * discoveries;
+        showMessage("Score: Reputation * Discoveries = " + score);
     }
 }

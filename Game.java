@@ -8,7 +8,6 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Random;
 
-
 public class Game {
     
     public enum Outcome {
@@ -119,55 +118,7 @@ public class Game {
             recipe.subList(0, RECIPE_SIZE - 1));
     }
 
-    public Outcome serve(List<String> ingredients) {
-        return serveWithDetails(ingredients).getOutcome();
-    }
 
-    public ServiceResult serveWithDetails(List<String> ingredients) {
-        if (customers.isEmpty()) {
-            throw new NoSuchElementException("No customers are waiting.");
-        }
-        if (isOver()) {
-            throw new IllegalStateException("The game has ended.");
-        }
-        List<String> recipe = validateRecipe(ingredients);
-        Potion potion = recipes.get(recipe);
-        Customer customer = customers.dequeue();
-        if (potion == null) {
-            player.decreaseReputation(3);
-            return new ServiceResult(Outcome.DUD, null);
-        }
-        player.saveRecipe(potion.getName(), new ArrayList<>(recipe));
-        if (potion.isPoison()) {
-            player.decreaseReputation(50);
-            return new ServiceResult(Outcome.POISON, potion.getName());
-        }
-        if (!customer.getDesiredPotion().equals(potion.getName())) {
-            player.decreaseReputation(10);
-            return new ServiceResult(Outcome.WRONG_POTION, potion.getName());
-        }
-        player.increaseReputation(15);
-        unlockIngredient();
-        return new ServiceResult(Outcome.CORRECT, potion.getName());
-    }
-
-    private List<String> validateRecipe(List<String> ingredients) {
-        if (ingredients == null || ingredients.size() != RECIPE_SIZE) {
-            throw new IllegalArgumentException("Select " + RECIPE_SIZE + " ingredients.");
-        }
-        List<String> recipe = new ArrayList<>();
-        for (String ingredient : ingredients) {
-            if (!availableIngredients.contains(ingredient)) {
-                throw new IllegalArgumentException("Unknown or locked ingredient: " + ingredient);
-            }
-            if (recipe.contains(ingredient)) {
-                throw new IllegalArgumentException("Select different ingredients.");
-            }
-            recipe.add(ingredient);
-        }
-        Collections.sort(recipe);
-        return recipe;
-    }
 
     private void unlockIngredient() {
         if (!lockedIngredients.isEmpty()) {
@@ -232,33 +183,38 @@ public class Game {
             "Ichor of a Fallen God",
             "Dust of the Elder Scroll",
             "Urn of Pyroclastic Ash",
-            "Secret written in the blood of a thousand virgins",
+            "Secret written in blood",
             "Unicorn Extract",
-            "Fallen soldier torn from the beak of a buzzard",
-            "Splinter from the mast of a sunken pirate ship",
+            "Half-digested, fallen adventurer",
+            "Splinter from a sunken pirate ship",
             "String of an elven bow",
-            "Guarded trinket of an alchemist's homunculus",
-            "Box with a child's last words echoing inside",
-            "First drop of rain to fall on a barren desert",
-            "Wand core of a formidible battle mage",
+            "Wyrm's guarded trinket",
+            "Box with a man's last words echoing inside",
+            "First fallen raindrop on a barren desert",
+            "Battlemage's Wand",
             "Shard of a narcisist's mirror",
-            "Root of a lightning-struck tree"
+            "Root of a lightning-struck tree",
+            "Moonpetal"
         ));
         // ADD POTION NAMES HERE
         potionNames = new ArrayList<String>(List.of(
             "Healing",
-            "Invisibility", 
-            "Adrenaline", 
+            "Ghost-Stalking", 
+            "Boar Adrenaline", 
             "Speed of a Tardy Kobold", 
             "Luck of a Leprechaun",
             "Dangerously High Charisma",
             "City-Melting Dragon Breath",
             "Michelin Star Ambrosia",
-            "New Perspectives"
+            "New Perspectives",
+            "Hearty Ale",
+            "Liquid Genius",
+            "Mildly More Confidence"
         ));
         // ADD POISON NAMES HERE
         poisonNames = new ArrayList<String>(List.of(
             "Poison: Hellfire Scoville",
+            "Poison: Ailing Ale",
             "Poison: Gamma Explosion",
             "Poison: Distilled Dysentery",
             "Poison: Throat-Melter",
@@ -268,7 +224,7 @@ public class Game {
     }
 
 
-    // 
+    // RECIPE-MAKING ALGORITHM
     // Space: O((N! / (M! * (N - M)!)) * M)  = O(M(C(N,M))), where N is the length of ingredentNames and M is the length of each Recipe
     // Time:  O((N! / (M! * (N - M)!)) * M)  = O(M(C(N,M))), where N is the length of ingredentNames and M is the length of each Recipe
     private void generateRecipeCombos(int start, ArrayList<String> combo) {
@@ -291,6 +247,54 @@ public class Game {
         }
     }
 
+    // 
+    public Outcome serve(List<String> ingredients) {
+        return serveWithDetails(ingredients).getOutcome();
+    }
+
+    public ServiceResult serveWithDetails(List<String> ingredients) {
+
+        List<String> recipe = validateRecipe(ingredients);
+        Potion potion = recipes.get(recipe);
+        Customer customer = customers.dequeue();
+        if (potion == null) {
+            player.decreaseReputation(3);
+            return new ServiceResult(Outcome.DUD, null);
+        }
+        player.saveRecipe(potion.getName(), new ArrayList<>(recipe));
+        if (potion.isPoison()) {
+            player.decreaseReputation(50);
+            return new ServiceResult(Outcome.POISON, potion.getName());
+        }
+        if (!customer.getDesiredPotion().equals(potion.getName())) {
+            player.decreaseReputation(10);
+            return new ServiceResult(Outcome.WRONG_POTION, potion.getName());
+        }
+        player.increaseReputation(15);
+        unlockIngredient();
+        return new ServiceResult(Outcome.CORRECT, potion.getName());
+    }
+
+    private List<String> validateRecipe(List<String> ingredients) {
+        if (ingredients == null || ingredients.size() != RECIPE_SIZE) {
+            throw new IllegalArgumentException("Select " + RECIPE_SIZE + " ingredients.");
+        }
+        List<String> recipe = new ArrayList<>();
+        for (String ingredient : ingredients) {
+            if (!availableIngredients.contains(ingredient)) {
+                throw new IllegalArgumentException("Unknown or locked ingredient: " + ingredient);
+            }
+            if (recipe.contains(ingredient)) {
+                throw new IllegalArgumentException("Select different ingredients.");
+            }
+            recipe.add(ingredient);
+        }
+        Collections.sort(recipe);
+        return recipe;
+    }
+
+
+    // GETTERS
 
     public Customer currentCustomer() {
         return customers.peek();

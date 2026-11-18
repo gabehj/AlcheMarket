@@ -88,29 +88,71 @@ public class ConsoleView {
 
     public void showOutcome(Customer customer, Game.ServiceResult result, int reputation) {
         showMessage("");
-        showMessage("Result");
-        showMessage(DIVIDER);
+        
+        // Dramatic Pause
+        output.print("Brewing");
+        try {
+            for (int i = 0; i < 3; i++) {
+                output.print(" .");
+                output.flush();
+                Thread.sleep(300);
+            }
+            output.println(" Complete!");
+            Thread.sleep(400);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
 
-        showMessage(DIVIDER);
 
         switch (result.getOutcome()) {
             case CORRECT:
+                output.println("You crafted: Potion of "+result.getBrewedPotion()+"!");
+                output.println("Sell to "+customer.getName()+" -> ");
+                input.nextLine();
                 showReaction(customer, CustomerDialogue.Event.CORRECT, result.getBrewedPotion());
-                showMessage("The customer received the requested potion. A material was unlocked.");
+                
+                try {
+                    Thread.sleep(700);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+
                 break;
             case WRONG_POTION:
+                output.println("You crafted: Potion of "+result.getBrewedPotion()+"!");
+                output.println("Sell to "+customer.getName()+"... maybe they won't notice? -> ");
+                input.nextLine();
                 showReaction(customer, CustomerDialogue.Event.WRONG, result.getBrewedPotion());
                 showMessage("Ordered: " + customer.getDesiredPotion()
                     + " | Delivered: " + result.getBrewedPotion());
+                
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                
                 break;
             case DUD:
-                showMessage("The ingredients produced no potion.");
+                showMessage("It was a DUD. The ingredients produced no potion.");
+                output.println("Tell the "+customer.getName()+" that it can only be brewed during a blood moon -> ");
+                input.nextLine();
                 break;
             case POISON:
+                showMessage("You crafted: "+result.getBrewedPotion());
+                output.println("Sell to "+customer.getName()+". It's probably harmless -> ");
+                input.nextLine();
                 AsciiArt.printPoisoned(output);
-                showMessage("The brew was poison.");
+                showMessage("The "+customer.getName()+" begins to writh on the ground, the flesh sloughing off their skin.");
+                showMessage("They let out a tortuos howl, which is cut short only as the foul brew dissolves their throat. ");
+                showMessage("Oops. Maybe later you'll brew a potion to bring them back. In the meantime, back to business!");
+                input.nextLine();
                 break;
         }
+
         showMessage("Reputation: " + reputation);
     }
 
@@ -149,12 +191,26 @@ public class ConsoleView {
 
         showMessage("");
         showMessage(DIVIDER);
-        String success = "Quest complete! You become the most renowned alchemist's of all the reals! Envied by rivals, admired by customers, and respected by kingdoms, your potion-making skills are truly impressive!\nV I C T O R Y ! ! !";
-        String fail = "The villagers have had enough with your charaltan snake oil. Soon, an angry mob crashes through your laboratory and drags you into the town square. There, you are burned at the stake, while jeered at from the crowd. \nG A M E   O V E R";
+        String success = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ V I C T O R Y ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+        success   +=   "\nQuest complete, you become the most renowned alchemist's of all the reals!";
+        success   +=   "\nEnvied by rivals, admired by customers, and respected by kingdoms,";
+        success   +=   "\nyour potion-making skills are truly impressive!";
+
+        String fail = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ E X E C U T I O N ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+        fail +=     "\nThe villagers have had enough with your charaltan snake oil. Soon, an angry ";
+        fail +=     "\nmob crashes through your laboratory and drags you into the town square.";
+        fail +=     "\nThere, you are burned at the stake, while jeered at from the crowd.";
+
         showMessage(reputation > 0 ? success : fail);
         showMessage("Reputation: " + reputation);
         showMessage("Potion types discovered: " + discoveries);
-        int score = reputation * discoveries;
-        showMessage("Score: Reputation * Discoveries = " + score);
+        
+        if (reputation < 0) {
+            int score = discoveries;
+            showMessage("Score: 1 * Discoveries = " + score);
+        } else {
+            int score = reputation * discoveries;
+            showMessage("Score: Reputation * Discoveries = " + score);
+        }
     }
 }

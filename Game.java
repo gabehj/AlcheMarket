@@ -1,12 +1,16 @@
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Random;
 
+
 public class Game {
+    
     public enum Outcome {
         CORRECT, WRONG_POTION, DUD, POISON
     }
@@ -53,28 +57,34 @@ public class Game {
     }
 
     public Game(String name, long seed) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Enter a player name.");
-        }
+        Random random = new Random(seed);
+
+        // Initialize Player
         player = new Player(name);
         player.setReputation(50);
-        Random random = new Random(seed);
+        // List of ingredients
         listNames();
         Collections.sort(ingredientNames);
+        // All ingredient combos
         generateRecipeCombos(0, new ArrayList<>());
         Collections.shuffle(combos, random);
+        // Map compos to potions
         generatePotions();
 
         // The first assigned recipe is a normal potion, and its materials start unlocked.
         starterRecipe = List.copyOf(combos.get(0));
+        // Add the initial ingredients to player
         availableIngredients.addAll(starterRecipe);
+        // Store other, locked ingredients in arraylist
         lockedIngredients.addAll(ingredientNames);
         lockedIngredients.removeAll(availableIngredients);
+        // Shuffle ingredients, always have minimum ingreds
         Collections.shuffle(lockedIngredients, random);
         while (availableIngredients.size() < STARTING_INGREDIENTS) {
             unlockIngredient();
         }
 
+        // First potion recipe
         Potion starter = recipes.get(starterRecipe);
         player.saveRecipe(starter.getName(), new ArrayList<>(starterRecipe));
         customers.enqueue(new NormalCustomer("Villager", CustomerType.TOWNSPERSON,

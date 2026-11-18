@@ -304,8 +304,8 @@ public class AsciiArt {
         for (int y = 11; y >= 5; y--)
             put(37 + (int) Math.round(Math.sin(y) * 2), y, pickc("~)(~"), pick(118, 71, 35));
 
-        center(0, 50, 20, "~ Potion No. 7 was NOT a healing potion ~", 244, 52);
-        center(0, 50, 21, "Y O U   D I E D", 196, 52);
+        center(0, 50, 20, "~ Oops. That was NOT a potion ~", 244, 52);
+        center(0, 50, 21, "C U S T O M E R   D I E D", 196, 52);
         output.print(render(0, 0, 50, 22));
     }
 
@@ -526,7 +526,7 @@ public class AsciiArt {
 
         // title plate
         fill(0, 42, W, 1, '=', 94, 52);
-        String title = "*  A L C H E M A R K E T  *   -   Potions, Reagents & Rare Curios";
+        String title = "*  A L C H E M A R K E T  *   -   Potions, Poisons & Prices";
         fill(0, 43, W, 1, ' ', 220, 0);
         put((W - title.length()) / 2, 43, title, 220, 0);
 
@@ -534,6 +534,6 @@ public class AsciiArt {
     }
 
     public static void main(String[] args) {
-        return;
+        printGrimoire();
     }
 }

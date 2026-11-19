@@ -11,7 +11,7 @@ import org.junit.Test;
 
 public class PrototypeTest {
     @Test
-    public void modelServesSevenCustomersWithoutAView() {
+    public void modelCompletesTheDailyQueueWithoutAView() {
         Game game = new Game("Tester", 15L);
         Customer first = game.currentCustomer();
         List<String> recipe = game.starterRecipe();
@@ -19,16 +19,11 @@ public class PrototypeTest {
         assertEquals(Game.Outcome.CORRECT, game.serve(reversed));
         assertEquals(65, game.getReputation());
         assertNotSame(first, game.currentCustomer());
-        for (List<Integer> order : List.of(List.of(1, 2, 3), List.of(1, 2, 4), List.of(2, 3, 4), List.of(2, 3, 4), List.of(1, 2, 3), List.of(2, 3, 4))) {
-            List<String> available = game.getAvailableIngredients();
-            List<String> selection = new java.util.ArrayList<>();
-            for (int index : order) {
-                selection.add(available.get(index - 1));
-            }
-            assertEquals(Game.Outcome.CORRECT, game.serve(selection));
+        while (!game.isDayClosed()) {
+            game.declineCustomer();
         }
-        assertTrue(game.isOver());
-        assertEquals(155, game.getReputation());
+        assertFalse(game.isOver());
+        assertEquals(65, game.getReputation());
         assertThrows(NoSuchElementException.class, () -> game.serve(recipe));
     }
 
@@ -55,15 +50,16 @@ public class PrototypeTest {
             assertEquals(50, game.getReputation());
         }
         String brew = "brew " + String.join(",", game.starterRecipe());
-        for (String order : List.of(brew, brew, "brew 1,2,4", "brew 2,3,4", "brew 2,3,4", brew)) {
-            assertTrue(controller.processLine(order));
+        int expectedGold = game.getGold() + game.potionPrice(game.starterRecipe());
+        assertTrue(controller.processLine(brew));
+        while (!game.isDayClosed()) {
+            assertTrue(controller.processLine("d"));
         }
-        assertFalse(controller.processLine("brew 2,3,4"));
-        assertTrue(output.toString(StandardCharsets.UTF_8).contains("Quest complete"));
-        output.reset();
-        assertFalse(controller.processLine(brew));
-        assertTrue(output.toString(StandardCharsets.UTF_8).contains("No customers"));
-        assertEquals(155, game.getReputation());
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("DAY 1 CLOSED"));
+        assertTrue(controller.processLine(""));
+        assertEquals(2, game.getDay());
+        assertEquals(expectedGold, game.getGold());
+        assertEquals(65, game.getReputation());
     }
 
     @Test
@@ -86,7 +82,7 @@ public class PrototypeTest {
         assertEquals(0, modelOutput.size());
         String result = output.toString(StandardCharsets.UTF_8);
         assertTrue(result.contains("The brew was poison."));
-        assertTrue(result.contains("Game over."));
+        assertTrue(result.contains("E X E C U T I O N"));
         assertTrue(game.isOver());
         assertEquals(0, game.getReputation());
 

@@ -15,7 +15,7 @@ public class CustomerDialogueTest {
         Customer first = game.currentCustomer();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleView view = new ConsoleView(new Scanner(
-            "1\n1\n2\nundo\nreset\n1\nbrew\n2\n3\nundo\n3\nbrew\nquit\n"),
+            "1\n1\n2\nundo\nreset\n1\nbrew\n2\n3\nundo\n3\nbrew\nd\nquit\n"),
             new PrintStream(output, true, StandardCharsets.UTF_8));
 
         new Validation(game, view).run();
@@ -31,13 +31,13 @@ public class CustomerDialogueTest {
         int nextOrder = transcript.lastIndexOf(game.currentCustomer().getName() + " / ");
         assertTrue(nextOrder >= 0);
         assertTrue(transcript.substring(nextOrder).contains("Cauldron  [ ] + [ ] + [ ]"));
-        assertTrue(transcript.contains("WAITING  [1 Traveler]  [2 Merchant]"));
-        assertTrue(transcript.substring(nextOrder).contains("WAITING  [1 Merchant]"));
+        assertTrue(transcript.contains("WAITING  [1 Herbalist 1]"));
+        assertTrue(transcript.contains("HERBS FOR SALE"));
     }
 
     @Test
     public void counterFitsWideAndNarrowTerminals() {
-        Game game = new Game("Tester", 15L);
+        Game game = new Game("Tester", 0L);
         for (int width : List.of(60, 100)) {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ConsoleView view = new ConsoleView(new Scanner(""),
@@ -83,7 +83,7 @@ public class CustomerDialogueTest {
 
     @Test
     public void redisplayReusesGreetingAndWrongPotionNamesBothOrders() {
-        Game game = new Game("Tester", 15L);
+        Game game = new Game("Tester", 0L);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ConsoleView view = new ConsoleView(new Scanner(""),
             new PrintStream(output, true, StandardCharsets.UTF_8));
@@ -102,7 +102,9 @@ public class CustomerDialogueTest {
         assertEquals(firstDisplay, output.toString(StandardCharsets.UTF_8));
 
         controller.processLine("brew 1,2,3");
-        controller.processLine("brew 1,2,3");
+        while (!game.currentCustomer().getName().equals("Buyer 5")) {
+            assertTrue(controller.processLine("d"));
+        }
         Customer second = game.currentCustomer();
         output.reset();
         assertTrue(controller.processLine("brew 1,2,3"));

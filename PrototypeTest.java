@@ -56,10 +56,37 @@ public class PrototypeTest {
             assertTrue(controller.processLine("d"));
         }
         assertTrue(output.toString(StandardCharsets.UTF_8).contains("DAY 1 CLOSED"));
+        output.reset();
+        assertTrue(controller.processLine("brew 1,2,3"));
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("Press Enter for the next day"));
+        assertEquals(1, game.getDay());
+        assertEquals(expectedGold, game.getGold());
         assertTrue(controller.processLine(""));
         assertEquals(2, game.getDay());
         assertEquals(expectedGold, game.getGold());
         assertEquals(65, game.getReputation());
+    }
+
+    @Test
+    public void malformedPurchasesLeaveTheHerbalistAndStockInPlace() {
+        Game game = new Game("Tester", 0L);
+        game.declineCustomer();
+        Customer vendor = game.currentCustomer();
+        String herb = game.vendorOffers().get(0);
+        int stock = game.stockOf(herb);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Validation controller = new Validation(game, new ConsoleView(new Scanner(""),
+            new PrintStream(output, true, StandardCharsets.UTF_8)));
+        for (String input : List.of("buy", "buy 0 1", "buy 999 1", "buy 1 -1", "buy a 2",
+            "buy 1 9999999999999999", "buy 1 9999", "haggle 17")) {
+            output.reset();
+            assertTrue(controller.processLine(input));
+            assertTrue(input, output.toString(StandardCharsets.UTF_8).contains("Invalid selection"));
+            assertSame(vendor, game.currentCustomer());
+            assertEquals(stock, game.stockOf(herb));
+            assertEquals(30, game.getGold());
+            assertEquals(50, game.getReputation());
+        }
     }
 
     @Test

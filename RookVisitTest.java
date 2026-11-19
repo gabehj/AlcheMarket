@@ -8,6 +8,28 @@ import org.junit.Test;
 
 public class RookVisitTest {
     @Test
+    public void insufficientGoldBlocksBothTheStakeAndTheLoan() {
+        Game game = new Game("Tester", 0L);
+        game.declineCustomer();
+        String herb = game.vendorOffers().get(0);
+        game.buyHerb(1, game.getGold() / game.herbPrice(herb));
+        int balance = game.getGold();
+        RookVisit first = nextVisit(game);
+        assertThrows(IllegalArgumentException.class, game::drawWithRook);
+        assertFalse(first.hasDrawn());
+        assertSame(first, game.currentCustomer());
+        assertEquals(balance, game.getGold());
+        game.declineCustomer();
+        nextVisit(game);
+        game.declineCustomer();
+        RookVisit third = nextVisit(game);
+        assertThrows(IllegalArgumentException.class, game::lendToRook);
+        assertSame(third, game.currentCustomer());
+        assertEquals(balance, game.getGold());
+        assertEquals(0, game.stockOf(Game.RARE_HERB));
+    }
+
+    @Test
     public void lossChargesOnceAndCarriesIntoTheNextVisit() {
         Game game = new Game("Tester", 0L);
         assertThrows(IllegalStateException.class, game::drawWithRook);

@@ -668,12 +668,19 @@ public class Game {
     }
 
     public int herbPrice(String herb) {
+        if (!ingredientNames.contains(herb)) {
+            throw new IllegalArgumentException("Unknown ingredient.");
+        }
         int dailyShift = Math.floorMod(31 * herb.hashCode() + day, 3);
         return RARE_HERB.equals(herb) ? 11 + dailyShift
             : 1 + Math.floorMod(herb.hashCode(), 3) + dailyShift;
     }
 
     public int potionPrice(List<String> recipe) {
+        if (recipe == null || recipe.size() != RECIPE_SIZE
+            || recipe.stream().distinct().count() != RECIPE_SIZE) {
+            throw new IllegalArgumentException("Quote three different ingredients.");
+        }
         return withMarkup(ingredientCost(recipe));
     }
 
@@ -686,6 +693,9 @@ public class Game {
     }
 
     public int dealPrice(int base, boolean selling, int haggle) {
+        if (base <= 0) {
+            throw new IllegalArgumentException("Price must be positive.");
+        }
         validateHaggle(haggle);
         int direction = selling ? 1 : -1;
         int loyalty = getReputation() >= TRUSTED_REPUTATION ? 5 : 0;
@@ -728,16 +738,19 @@ public class Game {
     }
 
     public int recipeOfferPrice(String potion) {
+        return (potionPrice(offeredRecipe(potion)) + 1) / 2;
+    }
+
+    private List<String> offeredRecipe(String potion) {
         Customer customer = currentCustomer();
         if (!(customer instanceof RecipeDealer)) {
             throw new IllegalStateException("Only recipe dealers quote formulas.");
         }
-        recipeOffers();
-        List<String> recipe = ((RecipeDealer) customer).getOffers().get(potion);
-        if (recipe == null) {
+        if (potion == null || !recipeOffers().contains(potion)) {
             throw new IllegalArgumentException("Unknown formula offer.");
         }
-        return (potionPrice(recipe) + 1) / 2;
+        List<String> recipe = ((RecipeDealer) customer).getOffers().get(potion);
+        return recipe;
     }
 
     public int buyRecipe(int item) {
@@ -767,8 +780,7 @@ public class Game {
     }
 
     public boolean recipeOfferNeedsLockedHerbs(String potion) {
-        RecipeDealer dealer = (RecipeDealer) currentCustomer();
-        return !availableIngredients.containsAll(dealer.getOffers().get(potion));
+        return !availableIngredients.containsAll(offeredRecipe(potion));
     }
 
     private void requireOpen() {

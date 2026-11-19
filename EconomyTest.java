@@ -5,6 +5,75 @@ import org.junit.Test;
 
 public class EconomyTest {
     @Test
+    public void unaffordableFormulaLeavesBookAndBalanceUnchanged() {
+        Game game = new Game("Tester", 0L);
+        game.declineCustomer();
+        String item = game.vendorOffers().get(0);
+        game.buyHerb(1, game.getGold() / game.herbPrice(item));
+        while (!(game.currentCustomer() instanceof RecipeDealer)) {
+            game.declineCustomer();
+        }
+        Customer dealer = game.currentCustomer();
+        List<String> offers = game.recipeOffers();
+        int gold = game.getGold();
+        int known = game.getDiscoveredPotionCount();
+        int reputation = game.getReputation();
+        int offer = 0;
+        while (offer < offers.size() && game.recipeOfferPrice(offers.get(offer)) <= gold) {
+            offer++;
+        }
+        assertTrue(offer < offers.size());
+        final int itemNumber = offer + 1;
+        assertThrows(IllegalArgumentException.class, () -> game.buyRecipe(itemNumber));
+        assertEquals(gold, game.getGold());
+        assertEquals(known, game.getDiscoveredPotionCount());
+        assertEquals(reputation, game.getReputation());
+        assertSame(dealer, game.currentCustomer());
+    }
+
+    @Test
+    public void invalidPriceRequestsAreRejected() {
+        Game game = new Game("Tester", 0L);
+        assertThrows(IllegalArgumentException.class, () -> game.herbPrice("Unknown herb"));
+        assertThrows(IllegalArgumentException.class, () -> game.potionPrice(List.of()));
+        assertThrows(IllegalArgumentException.class, () -> game.dealPrice(0, false, 0));
+        assertThrows(IllegalStateException.class, () -> game.recipeOfferNeedsLockedHerbs("Healing"));
+        while (!(game.currentCustomer() instanceof RecipeDealer)) {
+            game.declineCustomer();
+        }
+        assertThrows(IllegalArgumentException.class,
+            () -> game.recipeOfferNeedsLockedHerbs("Unknown potion"));
+    }
+
+    @Test
+    public void zeroStockRejectsBrewingWithoutAdvancingTheQueue() {
+        Game game = new Game("Tester", 0L);
+        List<String> recipe = game.starterRecipe();
+        for (int day = 1; day <= 3; day++) {
+            while (!game.currentCustomer().getName().equals("Villager")) {
+                game.declineCustomer();
+            }
+            assertEquals(Game.Outcome.CORRECT, game.serve(recipe));
+            while (!game.isDayClosed()) {
+                game.declineCustomer();
+            }
+            game.startNextDay();
+        }
+        while (!game.currentCustomer().getName().equals("Villager")) {
+            game.declineCustomer();
+        }
+        Customer buyer = game.currentCustomer();
+        int gold = game.getGold();
+        int reputation = game.getReputation();
+        assertEquals(0, game.stockOf(recipe.get(0)));
+        assertThrows(IllegalArgumentException.class, () -> game.serve(recipe));
+        assertSame(buyer, game.currentCustomer());
+        assertEquals(gold, game.getGold());
+        assertEquals(reputation, game.getReputation());
+        assertEquals(0, game.getDailySales());
+    }
+
+    @Test
     public void sellingAndRestockingCarryAcrossDailySettlement() {
         Game game = new Game("Tester", 0L);
         int firstDayVisitors = game.waitingCustomerNames().size() + 1;

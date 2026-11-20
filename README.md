@@ -105,13 +105,13 @@ Compile before presenting. Run `java -cp .d4-build Main --seed 0` for the fixed 
 | `CustomerTest.java` | Kyra | Tested customer construction, types, and clues. |
 | `CustomerType.java` | Greek | Defined the ordinary customer types. |
 | `EconomyTest.java` | Greek | Tested stock, purchases, pricing, haggling, daily turnover, and Duke's order. |
-| `Game.java` | Gabe, Greek | Gabe wrote the original game and potion mapping. Greek added daily turnover, the economy, and special encounters. |
+| `Game.java` | Gabe, Greek, Sarah | Gabe wrote the original game and potion mapping. Greek added daily turnover, the economy, and special encounters. Sarah added to system for determining what ingredients sellers offer and updated to take into account demand of customers for that day.|
 | `HerbVendor.java` | Greek | Added fixed offers for individual herbalists. |
 | `LinkedQueue.java` | Kyra, Greek | Kyra drafted and refined the FIFO queue. Greek added the waiting-list snapshot. |
 | `LinkedQueueTest.java` | Kyra, Greek | Kyra drafted the queue tests. Greek added interleaved FIFO and snapshot checks. |
 | `Main.java` | Sarah, Gabe, Greek | Sarah drafted the entry point. Gabe added the opening scene. Greek added the demo seed option. |
 | `NormalCustomer.java` | Greek | Added the ordinary customer implementation. |
-| `Player.java` | Gabe | Implemented the original player class. |
+| `Player.java` | Gabe, Sarah | Implemented the original player class. Added decrease to reputation when order is declined|
 | `PlayerTest.java` | Kyra | Tested reputation updates and recipe history. |
 | `Potion.java` | Gabe | Implemented the original potion class. |
 | `PotionTest.java` | Kyra | Tested potion construction and recipe matching. |

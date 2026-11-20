@@ -1,7 +1,7 @@
 /**
  * // -------------------------------------------------------------------------
 /**
- *  Main class that creates and runs a new game?
+ *  Main class that creates and runs a new game
  * 
  *  @author Sarah Beatty
  *  @version Nov 11, 2026

@@ -143,32 +143,105 @@ public class Game {
         fillDay();
     }
 
+    // private void fillDay() {
+    //     boolean rookArrives = (day >= 2 && day <= 4)
+    //         || (day == 5 && rookLastResult == RookVisit.Result.LOANED);
+    //     boolean valeArrives = day == 3;
+    //     int specialVisitors = (rookArrives ? 1 : 0) + (valeArrives ? 1 : 0);
+    //     int total = 8 + arrivals.nextInt(5);
+    //     if (total + specialVisitors == previousVisitorCount) {
+    //         total = total == 12 ? 8 : total + 1;
+    //     }
+    //     previousVisitorCount = total + specialVisitors;
+    //     int vendors = total / 2 + arrivals.nextInt(3) - 1;
+    //     List<Customer> visitors = new ArrayList<>();
+    //     CustomerType[] types = CustomerType.values();
+    //     for (int index = 1; index < total - vendors; index++) {
+    //         visitors.add(createCustomer("Buyer " + (index + 1),
+    //             types[arrivals.nextInt(types.length)], arrivals));
+    //     }
+    //     List<HerbVendor> suppliers = createSuppliers(vendors);
+    //     for (int index = 1; index < vendors - 1; index++) {
+    //         visitors.add(index == 1 ? new RecipeDealer() : suppliers.get(index));
+    //     }
+    //     Collections.shuffle(visitors, arrivals);
+    //     String potion = recipes.get(starterRecipe).getName();
+    //     Customer firstBuyer = new NormalCustomer("Villager", CustomerType.TOWNSPERSON,
+    //         potion, starterRecipe);
+    //     Customer firstVendor = suppliers.get(0);
+    //     if (day == 1 || arrivals.nextBoolean()) {
+    //         customers.enqueue(firstBuyer);
+    //         customers.enqueue(firstVendor);
+    //     }
+    //     else {
+    //         customers.enqueue(firstVendor);
+    //         customers.enqueue(firstBuyer);
+    //     }
+    //     visitors.forEach(customers::enqueue);
+    //     customers.enqueue(suppliers.get(vendors - 1));
+    //     if (valeArrives) {
+    //         customers.enqueue(createAdvancedOrder("Magister Vale", CustomerType.TOWNSPERSON, true, false));
+    //     }
+    //     if (rookArrives) {
+    //         customers.enqueue(new RookVisit(day - 1, rookLastResult));
+    //     }
+    //}
+
     private void fillDay() {
         boolean rookArrives = (day >= 2 && day <= 4)
             || (day == 5 && rookLastResult == RookVisit.Result.LOANED);
         boolean valeArrives = day == 3;
         int specialVisitors = (rookArrives ? 1 : 0) + (valeArrives ? 1 : 0);
         int total = 8 + arrivals.nextInt(5);
+
         if (total + specialVisitors == previousVisitorCount) {
             total = total == 12 ? 8 : total + 1;
         }
+
         previousVisitorCount = total + specialVisitors;
         int vendors = total / 2 + arrivals.nextInt(3) - 1;
+
         List<Customer> visitors = new ArrayList<>();
         CustomerType[] types = CustomerType.values();
+
+        // Generate regular customers first
         for (int index = 1; index < total - vendors; index++) {
             visitors.add(createCustomer("Buyer " + (index + 1),
                 types[arrivals.nextInt(types.length)], arrivals));
         }
-        List<HerbVendor> suppliers = createSuppliers(vendors);
-        for (int index = 1; index < vendors - 1; index++) {
-            visitors.add(index == 1 ? new RecipeDealer() : suppliers.get(index));
-        }
-        Collections.shuffle(visitors, arrivals);
+
+        // Create the guaranteed first buyer
         String potion = recipes.get(starterRecipe).getName();
-        Customer firstBuyer = new NormalCustomer("Villager", CustomerType.TOWNSPERSON,
-            potion, starterRecipe);
+        Customer firstBuyer = new NormalCustomer("Villager",
+            CustomerType.TOWNSPERSON, potion, starterRecipe);
+
+        // Create the advanced customer if one is scheduled
+        Customer valeCustomer = valeArrives
+            ? createAdvancedOrder("Magister Vale",
+                CustomerType.TOWNSPERSON, true, false)
+            : null;
+
+        // Collect all potion orders for today's seller inventory
+        List<Customer> dailyOrders = new ArrayList<>(visitors);
+        dailyOrders.add(firstBuyer);
+
+        if (valeCustomer != null) {
+            dailyOrders.add(valeCustomer);
+        }
+
+        // Generate sellers using the day's customer orders
+        List<HerbVendor> suppliers = createSuppliers(vendors, dailyOrders);
+
+        for (int index = 1; index < vendors - 1; index++) {
+            visitors.add(index == 1
+                ? new RecipeDealer()
+                : suppliers.get(index));
+        }
+
+        Collections.shuffle(visitors, arrivals);
+
         Customer firstVendor = suppliers.get(0);
+
         if (day == 1 || arrivals.nextBoolean()) {
             customers.enqueue(firstBuyer);
             customers.enqueue(firstVendor);
@@ -177,44 +250,181 @@ public class Game {
             customers.enqueue(firstVendor);
             customers.enqueue(firstBuyer);
         }
+
         visitors.forEach(customers::enqueue);
         customers.enqueue(suppliers.get(vendors - 1));
-        if (valeArrives) {
-            customers.enqueue(createAdvancedOrder("Magister Vale", CustomerType.TOWNSPERSON, true, false));
+
+        if (valeCustomer != null) {
+            customers.enqueue(valeCustomer);
         }
+
         if (rookArrives) {
             customers.enqueue(new RookVisit(day - 1, rookLastResult));
         }
     }
 
-    private List<HerbVendor> createSuppliers(int count) {
+
+
+    // private List<HerbVendor> createSuppliers(int count) {
+    //     List<String> herbs = new ArrayList<>(availableIngredients);
+    //     herbs.remove(RARE_HERB);
+    //     List<List<String>> pairs = new ArrayList<>();
+    //     for (int first = 0; first < herbs.size(); first++) {
+    //         for (int second = first + 1; second < herbs.size(); second++) {
+    //             pairs.add(List.of(herbs.get(first), herbs.get(second)));
+    //         }
+    //     }
+    //     Collections.shuffle(pairs, arrivals);
+    //     pairs.sort(java.util.Comparator.comparingInt(pair -> stockOf(pair.get(0)) + stockOf(pair.get(1))));
+
+    //     List<HerbVendor> suppliers = new ArrayList<>();
+    //     List<String> earlyOffers = new ArrayList<>(starterRecipe);
+    //     if (day >= 2) {
+    //         earlyOffers.addAll(NEW_HERBS);
+    //     }
+    //     earlyOffers.add(RARE_HERB);
+    //     suppliers.add(new HerbVendor("Herbalist 1", earlyOffers));
+    //     for (int index = 1; index < count; index++) {
+    //         List<String> offers = new ArrayList<>(pairs.get(index - 1));
+    //         if (index == count - 1) {
+    //             offers.add(RARE_HERB);
+    //         }
+    //         suppliers.add(new HerbVendor("Herbalist " + (index + 1), offers));
+    //     }
+    //     return suppliers;
+    // }
+
+
+    private List<HerbVendor> createSuppliers(
+        int count, List<Customer> dailyOrders) {
+
         List<String> herbs = new ArrayList<>(availableIngredients);
         herbs.remove(RARE_HERB);
+
+        // Calculate ingredient demand for today's customers
+        Map<String, Integer> demand = ingredientDemand(dailyOrders);
+
         List<List<String>> pairs = new ArrayList<>();
+
         for (int first = 0; first < herbs.size(); first++) {
             for (int second = first + 1; second < herbs.size(); second++) {
                 pairs.add(List.of(herbs.get(first), herbs.get(second)));
             }
         }
+
+        // Randomize pairs first to preserve randomness for ties
         Collections.shuffle(pairs, arrivals);
-        pairs.sort(java.util.Comparator.comparingInt(pair -> stockOf(pair.get(0)) + stockOf(pair.get(1))));
+
+        // Prioritize pairs containing ingredients needed by customers
+        pairs.sort((first, second) -> {
+            int firstDemand = demand.getOrDefault(first.get(0), 0)
+                + demand.getOrDefault(first.get(1), 0);
+
+            int secondDemand = demand.getOrDefault(second.get(0), 0)
+                + demand.getOrDefault(second.get(1), 0);
+
+            // Higher customer demand comes first
+            int demandComparison = Integer.compare(
+                secondDemand, firstDemand);
+
+            if (demandComparison != 0) {
+                return demandComparison;
+            }
+
+            // If demand is equal, prioritize lower stock
+            int firstStock = stockOf(first.get(0))
+                + stockOf(first.get(1));
+
+            int secondStock = stockOf(second.get(0))
+                + stockOf(second.get(1));
+
+            return Integer.compare(firstStock, secondStock);
+        });
 
         List<HerbVendor> suppliers = new ArrayList<>();
+
+        // Keep the first herbalist's existing inventory
         List<String> earlyOffers = new ArrayList<>(starterRecipe);
+
         if (day >= 2) {
             earlyOffers.addAll(NEW_HERBS);
         }
+
         earlyOffers.add(RARE_HERB);
+
         suppliers.add(new HerbVendor("Herbalist 1", earlyOffers));
+
+        // Remaining herbalists receive prioritized ingredient pairs
         for (int index = 1; index < count; index++) {
             List<String> offers = new ArrayList<>(pairs.get(index - 1));
+
             if (index == count - 1) {
                 offers.add(RARE_HERB);
             }
-            suppliers.add(new HerbVendor("Herbalist " + (index + 1), offers));
+
+            suppliers.add(new HerbVendor("Herbalist " + (index + 1),
+                offers));
         }
+
         return suppliers;
     }
+
+
+    private Map<String, Integer> ingredientDemand(
+        List<Customer> dailyOrders) {
+
+        Map<String, Integer> demand = new HashMap<>();
+
+        for (Customer customer : dailyOrders) {
+
+            // Advanced orders require multiple component potions
+            if (customer instanceof AdvancedOrder) {
+                AdvancedOrder order = (AdvancedOrder) customer;
+
+                for (String component : order.getComponents()) {
+                    addRecipeDemand(component, List.of(), demand);
+                }
+            }
+            else {
+                // Regular and special potion customers
+                addRecipeDemand(customer.getDesiredPotion(),
+                    customer.getClue(), demand);
+            }
+        }
+
+        return demand;
+    }
+
+
+    private void addRecipeDemand(String potionName,
+        List<String> clue, Map<String, Integer> demand) {
+
+        List<String> recipe = null;
+
+        // First, look for a recipe matching the potion AND its clues
+        for (Map.Entry<List<String>, Potion> entry : recipes.entrySet()) {
+
+            if (entry.getValue().getName().equals(potionName)
+                && entry.getKey().containsAll(clue)) {
+
+                recipe = entry.getKey();
+                break;
+            }
+        }
+
+        // If no recipe was found, there is nothing to prioritize
+        if (recipe == null) {
+            return;
+        }
+
+        // Add each required ingredient to the demand count
+        for (String ingredient : recipe) {
+            demand.merge(ingredient, 1, Integer::sum);
+        }
+    }
+
+
+
 
     private Customer createCustomer(String name, CustomerType type, Random random) {
         if (advancedOrdersUnlocked && random.nextInt(10) == 0) {
@@ -567,6 +777,8 @@ public class Game {
             }
             rookLastResult = RookVisit.Result.DECLINED;
         }
+
+        player.decreaseReputation(10);
         Customer visitor = customers.dequeue();
         if (visitor instanceof AdvancedOrder && ((AdvancedOrder) visitor).isRoyalVisit()) {
             advancedOrdersUnlocked = true;

@@ -3,6 +3,7 @@ import java.util.ArrayList;
 public class Player {
     private String name;
     private int reputation = 0;
+    //private int money = 100;
     private HashMap<String, ArrayList<ArrayList<String>>> savedRecipes = new HashMap<>();
 
     // CONSTRUCTOR
@@ -56,5 +57,24 @@ public class Player {
     public void decreaseReputation(int amount) {
         this.reputation -= amount;
     }
+
+
+
+    // public int getMoney() {
+    //     return money;
+    // }
+
+    // public void addMoney(int amount) {
+    //     money += amount;
+    // }
+
+    // public boolean spendMoney(int amount) {
+    //     if (money >= amount) {
+    //         money -= amount;
+    //         return true;
+    //     }
+
+    //     return false;
+    // }
 }
 

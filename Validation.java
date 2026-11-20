@@ -1,13 +1,3 @@
-import java.util.Scanner;
-
-/**
- * // -------------------------------------------------------------------------
-/**
- *  Class that handles user input and runs command loop?
- * 
- *  @author Sarah Beatty
- *  @version Nov 11, 2026
- */
 
 import java.util.ArrayList;
 import java.util.List;

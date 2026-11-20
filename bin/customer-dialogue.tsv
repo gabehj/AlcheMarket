@@ -1,0 +1,91 @@
+customerType	event	text
+TOWNSPERSON	GREETING	Morning. Have you got any {requestedPotion}? I've left my cart where the geese can get at it.
+TOWNSPERSON	GREETING	A small bottle of {requestedPotion}, please. My sister wrote it down after I came home with lamp oil last time.
+TOWNSPERSON	GREETING	Could I get some {requestedPotion}? I promised I'd be back before the bread came out.
+TOWNSPERSON	GREETING	One {requestedPotion}, if you please. Wrap it in paper. The eggs in my basket have had a rough enough morning.
+TOWNSPERSON	GREETING	Do you sell {requestedPotion} by the bottle? I've only ever bought it by the spoonful.
+TOWNSPERSON	CORRECT	That's the one. Thank you kindly.
+TOWNSPERSON	CORRECT	Much obliged. Now to see what the geese have left me.
+TOWNSPERSON	CORRECT	Thanks. I'll put it somewhere safer than the egg basket.
+TOWNSPERSON	CORRECT	Perfect. I might make it home while the bread's still warm.
+TOWNSPERSON	CORRECT	Good, I can read that label. Last shop wrote theirs in silver ink the size of fleas.
+TOWNSPERSON	WRONG	I'd better leave that here. I was sent for {requestedPotion}.
+TOWNSPERSON	WRONG	That says {brewedPotion}. I can read that much, at least.
+TOWNSPERSON	WRONG	Could you check the shelf again? I need {requestedPotion} before I head home.
+TOWNSPERSON	WRONG	If I bring that back, my sister will make me walk here again.
+TOWNSPERSON	WRONG	I'm sure it's good for something. What I need today is {requestedPotion}.
+WIZARD	GREETING	I need {requestedPotion}. My apprentice borrowed the last bottle and returned it remarkably clean.
+WIZARD	GREETING	A vial of {requestedPotion}, please. I'd brew it myself, but my cauldron has taken to answering back.
+WIZARD	GREETING	Have you any {requestedPotion}? I've a lecture in an hour and my demonstration is still climbing the curtains.
+WIZARD	GREETING	One bottle of {requestedPotion}. Write the name on the glass, if you would. I've had a disagreement with a loose label.
+WIZARD	GREETING	Could you spare a dose of {requestedPotion}? My notes say I have three. My cupboard has lodged an objection.
+WIZARD	CORRECT	Precisely what I needed. I'll keep this one on the shelf my apprentice can't reach.
+WIZARD	CORRECT	Excellent. I can postpone a very tedious afternoon of brewing.
+WIZARD	CORRECT	Thank you. I was beginning to consider canceling the practical demonstration.
+WIZARD	CORRECT	Good seal. I once lost a week's work to a cork I'd cut myself.
+WIZARD	CORRECT	Much appreciated. I'll make a note to buy the next bottle before I need it.
+WIZARD	WRONG	That's {brewedPotion}. I recognize the sediment. I asked for {requestedPotion}.
+WIZARD	WRONG	An interesting brew. I can think of three uses for it, and none concerns my errand.
+WIZARD	WRONG	My apprentice makes that mistake too. Put it aside and look for {requestedPotion}.
+WIZARD	WRONG	I would taste it to settle the matter, but that's how I lost my eyebrows the first time.
+WIZARD	WRONG	Let's check the labels before either of us starts defending a hypothesis.
+GOBLIN	GREETING	Got {requestedPotion}? Small bottle. Big bottles bang against my knees in the tunnels.
+GOBLIN	GREETING	One {requestedPotion}. I brought back last week's bottle. See? Even washed the outside.
+GOBLIN	GREETING	I need {requestedPotion}. Put the cork in tight. My bag's mostly holes.
+GOBLIN	GREETING	A bottle of {requestedPotion}, please. Can you write the name on it big enough to read by one candle?
+GOBLIN	GREETING	You sell {requestedPotion}? Good. The fellow under the bridge offered me soup in a fancy bottle.
+GOBLIN	CORRECT	Good cork. Doesn't budge. I'll remember this shop.
+GOBLIN	CORRECT	That fits my pocket. You'd be surprised how many shops get that wrong.
+GOBLIN	CORRECT	Thanks. I'll bring the bottle back if I don't find a better use for it.
+GOBLIN	CORRECT	That's it. And I can read the whole label without turning the bottle. Nice.
+GOBLIN	CORRECT	Much better than bridge soup. Keep a bottle handy next time I'm through.
+GOBLIN	WRONG	Wrong bottle. Good cork, though. Where's my {requestedPotion}?
+GOBLIN	WRONG	If I wanted a mystery bottle, I'd pick one out of the river for free.
+GOBLIN	WRONG	That says {brewedPotion}. I sounded the whole thing out. Still wrong.
+GOBLIN	WRONG	I could probably trade this, but then I'd have to come back for {requestedPotion}.
+GOBLIN	WRONG	Hang on. Set that down before you wrap it. I'm not walking home with the wrong thing again.
+SPIRIT	GREETING	Is the shop still open? I came for {requestedPotion}. I lose track of time after sunset.
+SPIRIT	GREETING	A vial of {requestedPotion}, please. Leave it on the counter. I still have trouble taking things from people's hands.
+SPIRIT	GREETING	Could I buy {requestedPotion}? I brought a coin from the year the old bridge opened. I hope it still spends.
+SPIRIT	GREETING	Do you carry {requestedPotion}? There was an apothecary on this corner when the well was still here.
+SPIRIT	GREETING	One {requestedPotion}, if you please. I waited outside for the bell to ring before I remembered it had been taken down.
+SPIRIT	CORRECT	Thank you. I think I remember how to carry a bottle without dropping it.
+SPIRIT	CORRECT	Much obliged. I had forgotten how pleasant it is to be expected at a counter.
+SPIRIT	CORRECT	You found it. I'll leave the coin where you can see it.
+SPIRIT	CORRECT	Thank you for keeping a light in the window. It makes this street easier to find.
+SPIRIT	CORRECT	That's the bottle. I'll take the long way home. The old steps are still there.
+SPIRIT	WRONG	I may have spoken too softly. I asked for {requestedPotion}.
+SPIRIT	WRONG	Leave that on the counter a moment. I think it belongs to someone else.
+SPIRIT	WRONG	I remember ordering {requestedPotion}. My memory's patchy, but that was just now.
+SPIRIT	WRONG	The bottle is familiar. The label says {brewedPotion}. Would you look again?
+SPIRIT	WRONG	I have made enough trips down this street to know when I need {requestedPotion}.
+DWARF	GREETING	One vial of {requestedPotion}. Wrap it well. The road back to the lower hall will shake the nails out of a cart.
+DWARF	GREETING	Have you got {requestedPotion}? I'm crossing the pass with my brothers, and we leave when the smith shuts his doors.
+DWARF	GREETING	A bottle of {requestedPotion}, please. I've room for it between my chisels if the glass is thick enough.
+DWARF	GREETING	I'll take {requestedPotion}. Put my name on it. Three of us share a bench, and two of us can't keep our hands to ourselves.
+DWARF	GREETING	Could you fill an order for {requestedPotion}? The last shop sent me up three flights of stairs to tell me they were out.
+DWARF	CORRECT	Well sealed. I'd trust that bottle in the bottom of my tool chest.
+DWARF	CORRECT	Good work. I'll tell the crew where I got it.
+DWARF	CORRECT	That's what I ordered. I'll be back when the road opens again.
+DWARF	CORRECT	My thanks. I can make the first lift down if I leave now.
+DWARF	CORRECT	I appreciate the care. Whoever packed my last bottle could learn a thing from you.
+DWARF	WRONG	Check the order. I asked for {requestedPotion}, and I've a crew waiting.
+DWARF	WRONG	Save the wrapping. I can't take {brewedPotion} back to the hall.
+DWARF	WRONG	The bottle's sound. The contents are wrong.
+DWARF	WRONG	Set it by the other order. I'll wait here while you find the {requestedPotion}.
+DWARF	WRONG	I've carried the wrong parcel over a mountain once. I learned to read the label at the counter.
+ELF	GREETING	A vial of {requestedPotion}, please. I'm taking the forest road before the rain reaches the ford.
+ELF	GREETING	Do you have {requestedPotion}? I used to find this shop by the old pear tree. The tree is gone, and your sign could stand to be larger.
+ELF	GREETING	One bottle of {requestedPotion}, if you have it. I promised to meet my companion where the west road forks.
+ELF	GREETING	I've come for {requestedPotion}. Could you wrap it in cloth? The glass will knock against my flute all the way home.
+ELF	GREETING	May I have some {requestedPotion}? I'd rather buy it here than cross the river again after dark.
+ELF	CORRECT	Thank you. I should reach the ford before the water rises.
+ELF	CORRECT	Much appreciated. I'll remember the door next time.
+ELF	CORRECT	That's what I came for. You've saved me a walk to the far side of the river.
+ELF	CORRECT	Thank you for the cloth. The last shopkeeper packed my bottle in dried leaves. I heard it for three miles.
+ELF	CORRECT	My thanks. If the pear tree ever grows back, your shop will be very easy to find.
+ELF	WRONG	Would you look at the label with me? I asked for {requestedPotion}.
+ELF	WRONG	I know that scent. Someone else may be waiting for this bottle.
+ELF	WRONG	That's {brewedPotion}. I've carried it before. What I need today is {requestedPotion}.
+ELF	WRONG	Set it aside for its owner. I have time for you to check the order.
+ELF	WRONG	I'd rather sort this out here than discover it halfway across the ford.

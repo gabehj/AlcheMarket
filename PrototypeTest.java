@@ -11,7 +11,7 @@ import org.junit.Test;
 
 public class PrototypeTest {
     @Test
-    public void modelServesSevenCustomersWithoutAView() {
+    public void modelCompletesTheDailyQueueWithoutAView() {
         Game game = new Game("Tester", 15L);
         Customer first = game.currentCustomer();
         List<String> recipe = game.starterRecipe();
@@ -19,18 +19,11 @@ public class PrototypeTest {
         assertEquals(Game.Outcome.CORRECT, game.serve(reversed));
         assertEquals(65, game.getReputation());
         assertNotSame(first, game.currentCustomer());
-        for (List<Integer> order : List.of(List.of(1, 4), List.of(1, 2, 3, 5),
-            List.of(1, 2, 3, 4, 5), List.of(1, 2, 4, 5), List.of(1, 3, 5, 8),
-            List.of(1, 2, 4, 5))) {
-            List<String> available = game.getAvailableIngredients();
-            List<String> selection = new java.util.ArrayList<>();
-            for (int index : order) {
-                selection.add(available.get(index - 1));
-            }
-            assertEquals(Game.Outcome.CORRECT, game.serve(selection));
+        while (!game.isDayClosed()) {
+            game.declineCustomer();
         }
-        assertTrue(game.isOver());
-        assertEquals(155, game.getReputation());
+        assertFalse(game.isOver());
+        assertEquals(65, game.getReputation());
         assertThrows(NoSuchElementException.class, () -> game.serve(recipe));
     }
 
@@ -46,7 +39,7 @@ public class PrototypeTest {
             .filter(name -> !game.getAvailableIngredients().contains(name))
             .findFirst().orElseThrow();
         for (String badInput : List.of("", "unknown", "brew", "brew 1",
-            "brew 1,2,3,4,5,6", "brew -1,2,3", "brew 999,2,3",
+            "brew 1,2", "brew 1,2,3,4", "brew -1,2,3", "brew 999,2,3",
             "brew 99999999999999999999,2,3", "brew abc,2,3",
             "brew Mandrak Root,2,3", "brew 1,1,2",
             "brew " + locked + ",2,3")) {
@@ -57,16 +50,43 @@ public class PrototypeTest {
             assertEquals(50, game.getReputation());
         }
         String brew = "brew " + String.join(",", game.starterRecipe());
-        for (String order : List.of(brew, "brew 1,4", "brew 1,2,3,5",
-            "brew 1,2,3,4,5", "brew 1,2,4,5", "brew 1,3,5,8")) {
-            assertTrue(controller.processLine(order));
+        int expectedGold = game.getGold() + game.potionPrice(game.starterRecipe());
+        assertTrue(controller.processLine(brew));
+        while (!game.isDayClosed()) {
+            assertTrue(controller.processLine("d"));
         }
-        assertFalse(controller.processLine("brew 1,2,4,5"));
-        assertTrue(output.toString(StandardCharsets.UTF_8).contains("Quest complete"));
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("DAY 1 CLOSED"));
         output.reset();
-        assertFalse(controller.processLine(brew));
-        assertTrue(output.toString(StandardCharsets.UTF_8).contains("No customers"));
-        assertEquals(155, game.getReputation());
+        assertTrue(controller.processLine("brew 1,2,3"));
+        assertTrue(output.toString(StandardCharsets.UTF_8).contains("Press Enter for the next day"));
+        assertEquals(1, game.getDay());
+        assertEquals(expectedGold, game.getGold());
+        assertTrue(controller.processLine(""));
+        assertEquals(2, game.getDay());
+        assertEquals(expectedGold, game.getGold());
+        assertEquals(65, game.getReputation());
+    }
+
+    @Test
+    public void malformedPurchasesLeaveTheHerbalistAndStockInPlace() {
+        Game game = new Game("Tester", 0L);
+        game.declineCustomer();
+        Customer vendor = game.currentCustomer();
+        String herb = game.vendorOffers().get(0);
+        int stock = game.stockOf(herb);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Validation controller = new Validation(game, new ConsoleView(new Scanner(""),
+            new PrintStream(output, true, StandardCharsets.UTF_8)));
+        for (String input : List.of("buy", "buy 0 1", "buy 999 1", "buy 1 -1", "buy a 2",
+            "buy 1 9999999999999999", "buy 1 9999", "haggle 17")) {
+            output.reset();
+            assertTrue(controller.processLine(input));
+            assertTrue(input, output.toString(StandardCharsets.UTF_8).contains("Invalid selection"));
+            assertSame(vendor, game.currentCustomer());
+            assertEquals(stock, game.stockOf(herb));
+            assertEquals(30, game.getGold());
+            assertEquals(50, game.getReputation());
+        }
     }
 
     @Test
@@ -81,7 +101,7 @@ public class PrototypeTest {
         PrintStream original = System.out;
         try (PrintStream captured = new PrintStream(modelOutput, true, StandardCharsets.UTF_8)) {
             System.setOut(captured);
-            assertFalse(controller.processLine("brew 3,4,5"));
+            assertFalse(controller.processLine("brew 1,2,4"));
         }
         finally {
             System.setOut(original);
@@ -89,7 +109,7 @@ public class PrototypeTest {
         assertEquals(0, modelOutput.size());
         String result = output.toString(StandardCharsets.UTF_8);
         assertTrue(result.contains("The brew was poison."));
-        assertTrue(result.contains("Game over."));
+        assertTrue(result.contains("E X E C U T I O N"));
         assertTrue(game.isOver());
         assertEquals(0, game.getReputation());
 

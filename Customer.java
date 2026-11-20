@@ -1,5 +1,4 @@
 import java.util.List;
-
 public abstract class Customer {
     private final String name;
     private final CustomerType type;
@@ -29,4 +28,3 @@ public abstract class Customer {
         return clue;
     }
 }
-

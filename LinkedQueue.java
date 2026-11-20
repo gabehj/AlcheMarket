@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 public class LinkedQueue<T> {
@@ -45,5 +47,13 @@ public class LinkedQueue<T> {
 
     public boolean isEmpty() {
         return head == null;
+    }
+
+    public List<T> snapshot() {
+        List<T> entries = new ArrayList<>();
+        for (Node<T> node = head; node != null; node = node.next) {
+            entries.add(node.value);
+        }
+        return List.copyOf(entries);
     }
 }

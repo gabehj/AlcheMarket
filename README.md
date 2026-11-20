@@ -5,73 +5,124 @@
 `Game` holds the recipes, reputation, and customer queue. It uses a singly linked `LinkedQueue<Customer>` to serve customers in arrival order. The model accepts ingredient selections and returns a service result without reading from or writing to the console.
 
 - **Run the model by itself.** Open `Test.java` and run its `main` method. In VS Code, click **Run** above `main`. In Eclipse, choose **Run As → Java Application**. The driver serves the first customer, checks that reputation rises from 50 to 65, and prints the next customer. It requires no keyboard input or dialogue file.
-- **Run the JUnit 4 tests.** Open the `AlcheMarket` project folder in VS Code and select **Testing → Run All Tests**, or import it as an existing Eclipse project and choose **Run As → JUnit Test**. `LinkedQueueTest` checks FIFO order, `peek` without removal, empty-queue behavior, rejection of null entries, and reuse after the queue is drained. `PrototypeTest` also serves all seven customers directly through the model.
+- **Run the JUnit 4 tests.** Open the `AlcheMarket` project folder in VS Code and select **Testing → Run All Tests**, or import it as an existing Eclipse project and choose **Run As → JUnit Test**. `LinkedQueueTest` checks FIFO order, `peek` without removal, empty-queue behavior, rejection of null entries, and reuse after the queue is drained. `PrototypeTest` also serves customers and closes a day directly through the model.
 
 ## Thin View
 
 Run `Main.java` as a Java application in the VS Code integrated terminal or the Eclipse Console. Keep `customer-dialogue.tsv` in the project root so the console can load it as a resource.
 
-Enter a player name, read the order and recipe clue, then enter one ingredient number at a time. The cauldron has five slots and accepts two to five distinct ingredients. Use `undo` to remove the last selection, `reset` to clear the cauldron, and `recipes` to open the recipe book. Enter `brew` when your selection is ready to brew and serve. Enter `quit` to leave the game.
+Enter a player name, read the order and recipe clue, then enter one ingredient number at a time. The cauldron has three slots and requires three distinct ingredients. Use `undo` to remove the last selection, `reset` to clear the cauldron, and `recipes` to open the recipe book. Enter `brew` when your selection is ready to brew and serve. Enter `quit` to leave the game.
 
 `Main` connects `ConsoleView`, the `Validation` controller, and `Game`. `Validation` turns commands into model calls and passes the results to `ConsoleView`, which displays the order, dialogue, and score.
 
 ## Runs Without Crashing
 
-The prototype starts with seven customers and shows the final score when the queue empties or reputation reaches zero. For the first order, enter `1`, `2`, and `3` on separate lines, then enter `brew`. Those three slots always make the starter potion. Later clues leave out one ingredient from a valid recipe. Check the recipe book with `recipes` for combinations you already know.
+The first order uses ingredients `1`, `2`, and `3`. Enter them on separate lines, then enter `brew`. Each brew uses one unit of each selected ingredient. Ordinary orders are accepted by default. Enter `D` to decline before brewing.
 
-The JUnit tests cover blank and unknown commands, missing selections, duplicate selections, misspelled or locked ingredients, negative and out-of-range indexes, and oversized or nonnumeric input. Invalid selections leave the current customer and reputation unchanged. Tests also cover `undo`, `reset`, a complete seven-customer run, and rejected service both after the queue empties and after reputation reaches zero with customers still waiting. The suite has 35 JUnit tests across LinkedQueueTest, PrototypeTest, CustomerDialogueTest, PlayerTest, and PotionTest.
+When an herbalist arrives, enter `buy <offer> <quantity>`, such as `buy 1 2`. Enter `D` when you are done shopping. Ingredient prices vary by herb and day. A correct delivery earns the current market value of the three ingredients plus 15%, rounded up to a whole gold piece. Moonpetal requires at least 65 reputation and two correct orders that day. The first Moonpetal purchase of the day queues Duke Lancaster. His order is marked `SPECIAL` in purple.
+
+The counter looks up the current order in the recipe book. It shows a known formula, a saved partial tip, or a message that the book has no entry. Customer tips and successfully brewed formulas are kept across days. A recipe dealer sells complete formulas with `buy <recipe>`. The base price of a formula is half the market price of one bottle, rounded up. Buying it adds an entry to the book.
+
+Use `haggle 5`, `haggle 15`, `haggle 20`, or `haggle 50` to buy at a discount or ask more for a potion. Use a negative number such as `haggle -15` to pay more or offer a cheaper potion, and `haggle 0` to reset. An accepted trade changes reputation by one point per five percentage points negotiated. At 80 reputation, the base rate automatically becomes 5% cheaper when buying and 5% higher when selling. Final prices are rounded to whole gold pieces, with a minimum of 1.
+
+When the queue is empty, the shop shows the day's correct orders, net gold, balance, and reputation. Press Enter to open the next day or `Q` to quit. Gold, stock, and reputation carry over. Reputation at zero ends the game.
+
+Rook the Ferryman visits on Days 2, 3, and 4. Press `T` for a line about the ferry, `A` to draw, or `D` to decline. High card wins and equal ranks keep both stakes with their owners. If you win, enter `gold` or `herb` to choose your prize. On Day 4, `loan` lends Rook 10 gold for his ferry charter. When he returns on Day 5, enter `collect` to receive two Moonpetal.
+
+Herbalist 1 starts carrying Silverleaf, Emberroot, and Frostmint on Day 2. Magister Vale arrives on Day 3 and orders a Royal Restorative. Stock Silverleaf for his Fever Tonic. For a Tier II order, select the three ingredients shown for the next bottle and enter `brew`. Repeat for the second bottle, then enter `combine` to deliver. The individual brews consume stock, and the final delivery pays once. After Vale leaves, ordinary buyers can occasionally order a Royal Restorative or Winterward Elixir. The recipe book lists their component potions.
+
+JUnit covers queue operations, malformed selections, purchasing limits, daily settlement, and the special order. Invalid selections and failed purchases leave the current transaction unchanged.
+
+## Build and Test from PowerShell
+
+From the folder containing Main.java, use Java 11 or newer. Set the two JAR paths to your local JUnit 4.13.2 and Hamcrest Core installations.
+
+~~~powershell
+$junit = 'C:\path\to\junit-4.13.2.jar'
+$hamcrest = 'C:\path\to\hamcrest-core-1.3.jar'
+New-Item -ItemType Directory -Force .d4-build
+$sources = (Get-ChildItem -File -Filter '*.java').Name
+javac --release 11 -encoding UTF-8 -cp "$junit;$hamcrest" -d .d4-build $sources
+java -cp .d4-build Test
+Copy-Item customer-dialogue.tsv .d4-build
+$tests = Get-ChildItem -File -Filter '*Test.java' |
+    Where-Object BaseName -ne 'Test' | Select-Object -ExpandProperty BaseName
+java -cp ".d4-build;$junit;$hamcrest" org.junit.runner.JUnitCore $tests
+java -cp .d4-build Main
+~~~
+
+The standalone driver and the model and queue tests exercise the rules independently of the console. Separate controller tests cover command handling. The last verified suite has 62 passing tests.
 
 ## Reflection
 
-The specification described separate brewing and serving actions, with the model keeping a brewed potion until the player chose to serve it. For the first prototype, we combined those actions into one `brew` command so we could test a complete customer turn through the controller. The first console version required a comma-separated command. During a walkthrough, that was awkward to type and gave little feedback before submission. `Validation` now keeps the selections for the current turn and redraws the cauldron after each choice. Players can undo or reset their selections before committing the turn.
+Our D3 change feature was Duke Lancaster as a special customer in the existing FIFO queue. D4 adds `SpecialCustomer`, a named order for Lunar Remedy, and a payout for correct delivery. As predicted, `Game.serveWithDetails()` resolves the sale, `Game.ServiceResult` carries the result, and `ConsoleView` displays the special order and payout. We initially planned to enqueue Duke at a fixed position in the constructor. In the current game, purchasing Moonpetal after meeting its requirements adds him to the tail. That connects his arrival to something the player does and preserves earlier arrivals.
 
-The first prototype accepted exactly three ingredients. To bring it closer to the specification, we expanded recipes to two through five distinct ingredients. The starter order still uses a known three-ingredient recipe, and five materials are unlocked at the start so all recipe sizes are playable. We assign additional recipes as materials unlock to avoid generating every possible five-ingredient combination at startup. Sorted combinations let players enter ingredients in any order. Later orders use recipes that can be made with the starting materials. The prototype starts with seven customers and ends when the queue empties or reputation reaches zero. The Scope described waiting for another arrival when the queue emptied. This version treats serving the last customer as the end of the run and rejects further service.
+Duke uses the same three-item `brew` command as other buyers. The algorithms in `LinkedQueue.enqueue()` and `dequeue()` stayed the same. The queue class gained `snapshot()` for the waiting-list display. `Validation` added command routes for trading, Rook's wager, and Vale's two-stage order. The single-customer D3 prediction did not account for those additions. The actual feature touches `SpecialCustomer`, `Game`, and `ConsoleView`, with additional integration in `Validation` and model tests in `EconomyTest`.
 
-The Scope left open how to store recipes, vary them between games, and give customer types distinct personalities. We use a map from sorted combinations to potions. The seven-customer queue gives players more turns to try different recipe lengths, unlock materials, and see different customer dialogue. Expanding from three to seven customers exposed tests that assumed particular orders and a three-customer ending. The model now accepts a fixed seed for tests, while normal launches still use a fresh seed. The console loads customer lines from a TSV file so the team can revise dialogue without editing Java. Each ordinary customer type has separate greeting, thanks, and wrong-potion pools. Customer type currently determines dialogue, and type-specific order lists remain open.
+`Game` owns inventory, currency, orders, and encounter results. `Validation` keeps the current input and passes model data to `ConsoleView` for each frame. The view does not keep an inventory, balance, or queue of its own. Adding Rook and Vale required the view and controller to understand the new encounter types and available actions. Their game rules are tested independently of the console.
 
-The model runs independently through `Test.java` and the direct model tests. When ASCII scenes were added, the poison branch initially printed from `Game`. We moved that call to `ConsoleView` after seeing the scene appear during model testing. `Game` now returns the outcome and potion name, and the controller passes the result to the view. The poison regression test also checks that the next customer and reputation stay unchanged if the player tries to serve again after losing.
+We added finite stock, variable prices, and daily settlement so today's purchases affect tomorrow's stock. The recipe book now remembers tips and complete formulas. The current order displays shelf numbers for a known formula, while the full book groups combinations by potion and lists their ingredients. The D3 plan also called for numbering every formula in the full book. That work remains open, along with separate brewing and serving for ordinary orders and the remaining proposed encounters. Vale introduces occasional Tier II orders after his first visit.
 
-Separate brewing and serving, repeated ingredients within one recipe, and special customer behavior remain open. The Scope's insufficient-funds case applied to purchases. The current game uses reputation and has no purchase command or player balance, so that input case does not apply to this version.
+For the next encounter, we would move each encounter's available actions and results behind a shared contract. The controller could forward the player's choice and the view could render the available actions with fewer visitor-type branches.
 
 ## Next Steps
 
-For Deliverable 4, we plan to finish the recipe book first, then add a special customer and test both changes together. The assignments below are proposed based on each member's work on the prototype.
+The proposed owners follow the team's existing areas of responsibility.
 
-| Order | Task | Proposed owner | Verification |
+| Order | Remaining work | Owner | Done when |
 | --- | --- | --- | --- |
-| 1 | Make the recipe book easier to scan. Group recipes by potion, number each combination, and show the ingredient count and current ingredient numbers. Keep the current cauldron selection when the book is opened. | Sarah leads the controller and display changes. Gabe checks that the recipe data already exposes what the view needs. | Verify that a potion with multiple recipes shows each combination once and that opening the book preserves the selected ingredients, current customer, and reputation. |
-| 2 | Add Duke Lancaster as a special customer with a unique request, dialogue, and a one-time reward for correct delivery. | Greek defines the customer and dialogue. Gabe integrates the order and reward into the game model. Sarah connects the reward display. | Verify that the order can be brewed using available materials, correct delivery awards the bonus once, and a wrong potion or dud earns no bonus. |
-| 3 | Run the queue, controller, and game regression tests after both changes are integrated. | Kyra leads verification, with Greek and Sarah reviewing the new customer and console tests. | Verify that the special customer follows FIFO order, the original brew controls still work, and invalid commands and service after game over leave game state unchanged. |
+| 1 | Number all recipes in the book and mark ingredients already in stock. | Sarah | Players can compare two formulas for the same potion and choose one from the book's information. |
+| 2 | Tune stock and special-order payouts. | Gabe | Ordinary sales can fund the ingredients in a Day 1 through Day 3 playthrough. |
+| 3 | Polish Rook and Vale's prompts. | Greek | Players can finish both encounters using the commands shown at the counter. |
+| 4 | Run the full suite and rehearse the demo. | Kyra, with the presenters | All tests pass and the complete demo fits under three minutes. |
 
-**Change feature.** We will add `SpecialCustomer` as a subclass of `Customer`. The `Game(String, long)` constructor will enqueue Duke Lancaster at a defined position. `Game.serveWithDetails()` will apply the reward on correct delivery and expose it through `Game.ServiceResult`. `ConsoleView.showTurn()` will show the Duke's request, and `ConsoleView.showOutcome()` will show the reward. We expect `LinkedQueue.enqueue()`, `LinkedQueue.dequeue()`, and the `brew` branch of `Validation.processLine()` to work with the existing interface.
+**Stretch goals.** Keep haggling, distinct suppliers, Rook's returning visits, and Vale's Tier II orders. Leave recipe autofill, a separate event queue, and the Elspeth, Brann, and Mara encounters outside the final build.
 
-For recipe-book improvements, the `recipes` branch of `Validation.processLine()` will pass the available ingredients to `ConsoleView.showRecipeBook()` so it can display ingredient numbers. We expect to reuse `Game.getDiscoveredRecipes()` for the recipe data.
+### Three-minute demo
 
-**Stretch goals.** We plan to implement one special-customer encounter. Multi-stage missions, a separate event queue, and recipe autofill are outside the Deliverable 4 plan.
+Compile before presenting. Run `java -cp .d4-build Main --seed 0` for the fixed Day 1 queue below. A scripted terminal rehearsal verified the 16 inputs, including the player name and quit command. This live plan budgets 2:45, leaving 15 seconds of buffer.
+
+| Time | Live steps |
+| --- | --- |
+| 0:00–0:30 | Enter `Demo`. Point out the starter recipe, waiting queue, and balance. Enter `brew 1,2,3` to complete the first sale. |
+| 0:30–1:05 | At Herbalist 1, try `buy 4 1` to show why Moonpetal is blocked. Enter `d` three times to reach Buyer 5, then enter `brew 1,3,4`. |
+| 1:05–1:40 | Enter `d` five times to reach Herbalist 6. Enter `buy 3 1` to buy Moonpetal and show Duke join the queue. Enter `d` to reach him. |
+| 1:40–2:10 | Show the special order and clue. Enter `brew 1,2,7`. Show the Lunar Remedy payout and the Day 1 summary. |
+| 2:10–2:45 | Explain the input path through controller and model. Show the passing interleaved FIFO and special-order tests. |
+| 2:45–3:00 | Buffer. |
 
 ## Attribution
 
 | Class or test file | Contributor(s) | Work performed |
 | --- | --- | --- |
-| `AsciiArt.java` | Gabe | Added ASCII scenes. |
-| `ConsoleView.java` | Greek | Added customer dialogue and the cauldron display. |
+| `AdvancedOrder.java` | Greek | Added Tier II orders and component progress. |
+| `AdvancedOrderTest.java` | Greek | Tested component brewing, combining, and later orders. |
+| `AsciiArt.java` | Gabe | Added and revised the ASCII scenes. |
+| `ConsoleView.java` | Greek, Gabe | Greek added dialogue, the colored counter, and encounter panels. Gabe refined the UI and score display. |
 | `Customer.java` | Greek | Defined customer identity, type, order, and clue. |
-| `CustomerDialogue.java` | Greek | Added loading and selection for customer dialogue. |
-| `CustomerDialogueTest.java` | Greek, Kyra | Greek tested dialogue pools, wrong-order feedback, and ingredient selection. Kyra contributed customer testing. |
-| `CustomerType.java` | Greek | Defined the six ordinary customer types. |
-| `Game.java` | Gabe | Implemented the original game logic and potion mapping algorithm. |
-| `LinkedQueue.java` | Kyra | Drafted and refined the FIFO queue. |
-| `LinkedQueueTest.java` | Kyra | Drafted and refined the queue tests. |
-| `Main.java` | Sarah, Gabe | Sarah drafted the entry point. Gabe added the opening scene. |
+| `CustomerDialogue.java` | Greek | Added dialogue loading and selection. |
+| `CustomerDialogueTest.java` | Greek, Kyra | Greek tested dialogue, feedback, and selection. Kyra contributed customer testing. |
+| `CustomerTest.java` | Kyra | Tested customer construction, types, and clues. |
+| `CustomerType.java` | Greek | Defined the ordinary customer types. |
+| `EconomyTest.java` | Greek | Tested stock, purchases, pricing, haggling, daily turnover, and Duke's order. |
+| `Game.java` | Gabe, Greek | Gabe wrote the original game and potion mapping. Greek added daily turnover, the economy, and special encounters. |
+| `HerbVendor.java` | Greek | Added fixed offers for individual herbalists. |
+| `LinkedQueue.java` | Kyra, Greek | Kyra drafted and refined the FIFO queue. Greek added the waiting-list snapshot. |
+| `LinkedQueueTest.java` | Kyra, Greek | Kyra drafted the queue tests. Greek added interleaved FIFO and snapshot checks. |
+| `Main.java` | Sarah, Gabe, Greek | Sarah drafted the entry point. Gabe added the opening scene. Greek added the demo seed option. |
 | `NormalCustomer.java` | Greek | Added the ordinary customer implementation. |
 | `Player.java` | Gabe | Implemented the original player class. |
 | `PlayerTest.java` | Kyra | Tested reputation updates and recipe history. |
 | `Potion.java` | Gabe | Implemented the original potion class. |
-| `PotionTest.java` | Kyra | Tested potion construction, poison flags, and recipe matching. |
-| `PrototypeTest.java` | Greek | Tested the model, invalid input, and both game endings. |
+| `PotionTest.java` | Kyra | Tested potion construction and recipe matching. |
+| `PrototypeTest.java` | Greek | Tested the model, invalid inputs, daily settlement, and game over. |
+| `RecipeDealer.java` | Greek | Added the formula seller and its offers. |
+| `RookVisit.java` | Greek | Defined returning visits, previous results, and card state. |
+| `RookVisitTest.java` | Greek | Tested the wager, rejected stakes, loans, and repayment. |
+| `SpecialCustomer.java` | Greek | Added Duke Lancaster's special order type. |
 | `Test.java` | Greek | Added the standalone model driver. |
-| `Validation.java` | Sarah, Greek | Sarah drafted the controller. Greek added keyboard brewing controls. |
+| `Validation.java` | Sarah, Greek | Sarah drafted the controller. Greek added keyboard brewing, trading, and encounter actions. |
 
 ## GenAI Note
 
-Greek used GenAI to help improve the customer dialogue system and streamline the game's controls. Greek also used GenAI to review the test classes, troubleshoot failing tests, and address gaps in test coverage. Gabe used Sonnet to help create the ASCII scenes. Kyra used GenAI to review what to add or remove in the tests.
+Greek used Codex to help design and implement the counter, economy, recipe lookup, and special encounters. Greek also used Codex to draft and run tests, investigate bad-input handling, and document the D4 changes and demo. Gabe used Sonnet to help create the ASCII scenes. Kyra used GenAI to review what to add or remove in the tests.
